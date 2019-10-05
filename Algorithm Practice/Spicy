@@ -1,0 +1,16 @@
+#요소 두 개씩 더하기
+
+import heapq
+
+def solution(scoville, K):
+    heap=[]
+    for i in scoville:
+        heapq.heappush(heap, i)
+    temp_=0
+    while heap[0]<K:
+        try:
+            heapq.heappush(heap, heapq.heappop(heap)+heapq.heappop(heap)*2)
+        except:
+            return -1
+        temp_+=1
+    return temp_
