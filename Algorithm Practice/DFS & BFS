@@ -1,0 +1,58 @@
+#DFS와 BFS 각각 방법 찾기
+
+NMV=list(map(int,input().split()))
+M=list()
+for i in range(NMV[1]):
+    M.append(list(map(int, input().split())))
+
+N=[[] for _ in range(NMV[0])]
+
+for i in M:
+    N[i[0]-1].append(i[1])
+    N[i[1]-1].append(i[0])
+for i in range(len(N)):
+    list(set(N[i]))
+    N[i].sort(reverse=True)
+
+stack=list()
+already=list()
+
+stack.append(NMV[2])
+
+while stack!=[]:
+    current=stack.pop(0)
+    for l in N[current-1]:
+        if l not in already:
+            stack.insert(0, l)
+    if current not in already:
+        already.append(current)
+
+answer=str()
+
+for i in already:
+    answer+=str(i)+' '
+
+print(answer[:-1])
+
+stack=list()
+already=list()
+
+stack.append(NMV[2])
+
+for i in range(len(N)):
+    N[i].sort()
+    
+while stack!=[]:
+    current=stack.pop(0)
+    for l in N[current-1]:
+        if l not in already:
+            stack.append(l)
+    if current not in already:
+        already.append(current)
+
+answer=str()
+
+for i in already:
+    answer+=str(i)+' '
+
+print(answer[:-1])
