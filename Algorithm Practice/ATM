@@ -1,0 +1,8 @@
+#줄 서있는 사람의 대기 시간 총 합 최소화
+
+n = int(input())
+L = list(map(int, input().split()))
+L.sort()
+for i in range(0,len(L)):
+    L[i]=(n-i)*L[i]
+print(sum(L))
