@@ -1,0 +1,14 @@
+#앞글자 대문자로 바꿔서 리턴
+
+def solution(s):
+    L=[]
+    s=s.split(' ')
+    for i in s:
+        i=i.lower()
+        i=i.capitalize()
+        L.append(i)
+    answer = ''
+    for i in L:
+        answer+=i+' '
+    answer=answer[:-1]
+    return answer
