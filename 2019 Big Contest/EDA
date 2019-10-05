@@ -1,0 +1,54 @@
+#Google Colaboratory
+from google.colab import drive
+drive.mount('/gdrive', force_remount=True)
+
+#importing
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import MinMaxScaler
+minMaxScaler = MinMaxScaler()
+from sklearn.neighbors import LocalOutlierFactor
+clf = LocalOutlierFactor(n_neighbors=20, contamination=0.1)
+import tensorflow as tf
+import numpy as np
+import glob
+import os
+import pandas as pd
+
+#Reading
+root_dir = '/content/gdrive/My Drive/Data/'
+csv_list = os.listdir(root_dir)
+
+train_label = pd.read_csv("/gdrive/My Drive/Data/train_label.csv")
+train_pledge = pd.read_csv("/gdrive/My Drive/Data/train_pledge.csv")
+
+train_pledge_label = pd.merge(train_label, train_pledge, on='acc_id', how='outer')
+
+#Dist_plot
+sns.distplot(train_pledge_label['acc_id'])
+plt.show()
+
+#Corr_plot
+columns = list(train_pledge_label.columns)
+
+train_pledge_numeric = train_pledge_label[['acc_id', 'char_id', 
+'pledge_id', 'play_char_cnt', 'combat_char_cnt', 'pledge_combat_cnt', 'random_attacker_cnt', 'random_defender_cnt', 'same_pledge_cnt', 'temp_cnt', 'etc_cnt', 'combat_play_time', 'non_combat_play_time', 'survival_time', 'amount_spent', 'server_int']]
+
+numeric_columns = list(train_pledge_numeric.columns)
+
+corrmat = train_pledge_numeric.corr()
+f, ax = plt.subplots(figsize=(20, 9))
+sns.heatmap(corrmat, vmax=.8, square=True, annot=True)
+
+top_corr_features = corrmat.index[abs(corrmat['survival_time'])>0.05]
+plt.figure(figsize=(10,10))
+g = sns.heatmap(train_pledge_numeric[top_corr_features].corr(),annot=True,cmap="RdYlGn")
+
+top_corr_features = corrmat.index[abs(corrmat['amount_spent'])>0.05]
+plt.figure(figsize=(10,10))
+g = sns.heatmap(train_pledge_numeric[top_corr_features].corr(),annot=True,cmap="RdYlGn")
+
+#Scatter
+plt.figure(figsize=(15,15))
+plt.scatter(train_pledge_numeric['playtime'], train_pledge_numeric['private_shop'])
