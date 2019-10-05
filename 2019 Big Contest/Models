@@ -1,0 +1,1327 @@
+# 랜덤포레스트
+
+from sklearn.ensemble import RandomForestRegressor
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+
+train_size=int(len(train)*0.7)
+
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features][0:train_size]
+X_test = train[features][train_size:]
+Y_train_survival_time = train_label['survival_time'][0:train_size]
+Y_train_amount_spent = train_label['amount_spent'][0:train_size]
+Y_test_survival_time = train_label['survival_time'][train_size:]
+Y_test_amount_spent = train_label['amount_spent'][train_size:]
+
+from sklearn.metrics import make_scorer
+
+def rmsle(predicted_values, actual_values) : 
+  predicted_values = np.array(predicted_values)
+  actual_values = np.array(actual_values)
+  
+  log_predict = np.log(predicted_values + 1)
+  log_actual = np.log(actual_values + 1)
+  
+  difference = np.square(log_predict - log_actual)
+  
+  mean_dif = difference.mean()
+  
+  score = np.sqrt(mean_dif)
+  
+  return score
+
+rmsle_scorer = make_scorer(rmsle)
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+model = RandomForestRegressor(n_estimators = 1000, n_jobs = -1, random_state = 0)
+
+df_train = X_train
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+df_test = X_test
+
+pred1 = result.predict(df_test)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test)
+pred2 = pred2.tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=train_id_list[train_size:]
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_random_forest=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'RandomForest_predict_test.csv')
+
+# 랜덤포레스트
+
+from sklearn.ensemble import RandomForestRegressor
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test1 = pd.read_csv(base_dir+'preprocess/test1_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test1 = test1[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+from sklearn.metrics import make_scorer
+
+def rmsle(predicted_values, actual_values) : 
+  predicted_values = np.array(predicted_values)
+  actual_values = np.array(actual_values)
+  
+  log_predict = np.log(predicted_values + 1)
+  log_actual = np.log(actual_values + 1)
+  
+  difference = np.square(log_predict - log_actual)
+  
+  mean_dif = difference.mean()
+  
+  score = np.sqrt(mean_dif)
+  
+  return score
+
+rmsle_scorer = make_scorer(rmsle)
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+model = RandomForestRegressor(n_estimators = 1000, n_jobs = -1, random_state = 0)
+
+df_train = X_train
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+df_test1 = X_test1
+
+pred1 = result.predict(df_test1)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test1)
+pred2 = pred2.tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test1_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_random_forest=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'RandomForest_predict_test1.csv')
+
+# 랜덤포레스트
+
+from sklearn.ensemble import RandomForestRegressor
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test2 = pd.read_csv(base_dir+'preprocess/test2_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test2 = test2[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+from sklearn.metrics import make_scorer
+
+def rmsle(predicted_values, actual_values) : 
+  predicted_values = np.array(predicted_values)
+  actual_values = np.array(actual_values)
+  
+  log_predict = np.log(predicted_values + 1)
+  log_actual = np.log(actual_values + 1)
+  
+  difference = np.square(log_predict - log_actual)
+  
+  mean_dif = difference.mean()
+  
+  score = np.sqrt(mean_dif)
+  
+  return score
+
+rmsle_scorer = make_scorer(rmsle)
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+model = RandomForestRegressor(n_estimators = 1000, n_jobs = -1, random_state = 0)
+
+df_train = X_train
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+df_test2 = X_test2
+
+pred1 = result.predict(df_test2)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test2)
+pred2 = pred2.tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test2_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_random_forest=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'RandomForest_predict_test2.csv')
+
+# XGBoost
+
+from sklearn.preprocessing import Imputer
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+
+train_size=int(len(train)*0.7)
+
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features][0:train_size]
+X_test = train[features][train_size:]
+Y_train_survival_time = train_label['survival_time'][0:train_size]
+Y_train_amount_spent = train_label['amount_spent'][0:train_size]
+Y_test_survival_time = train_label['survival_time'][train_size:]
+Y_test_amount_spent = train_label['amount_spent'][train_size:]
+
+from xgboost import XGBRegressor
+
+model = XGBRegressor(n_estimators=1000, learning_rate=0.05)
+
+df_train = X_train
+df_test = X_test
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+pred1 = result.predict(df_test)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test)
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=train_id_list[train_size:]
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_XGBoost=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'XGBoost_predict_test.csv')
+
+# XGBoost
+
+from sklearn.preprocessing import Imputer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test1 = pd.read_csv(base_dir+'preprocess/test1_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test1 = test1[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+from xgboost import XGBRegressor
+
+model = XGBRegressor(n_estimators=1000, learning_rate=0.05)
+
+df_train = X_train
+df_tes1t = X_test1
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+pred1 = result.predict(df_test1)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test1)
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test1_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_XGBoost=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'XGBoost_predict_test1.csv')
+
+# XGBoost
+
+from sklearn.preprocessing import Imputer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test2 = pd.read_csv(base_dir+'preprocess/test2_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test2 = test2[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+from xgboost import XGBRegressor
+
+model = XGBRegressor(n_estimators=1000, learning_rate=0.05)
+
+df_train = X_train
+df_tes1t = X_test2
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+pred1 = result.predict(df_test2)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test2)
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test2_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_XGBoost=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'XGBoost_predict_test2.csv')
+
+# SVR
+
+from sklearn.preprocessing import Imputer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+
+train_size=int(len(train)*0.7)
+
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features][0:train_size]
+X_test = train[features][train_size:]
+Y_train_survival_time = train_label['survival_time'][0:train_size]
+Y_train_amount_spent = train_label['amount_spent'][0:train_size]
+Y_test_survival_time = train_label['survival_time'][train_size:]
+Y_test_amount_spent = train_label['amount_spent'][train_size:]
+
+from sklearn.svm import SVR
+
+model = SVR(gamma='scale', C=1.0, epsilon=0.2)
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+df_train = X_train
+df_test = X_test
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+pred1 = result.predict(df_test)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test)
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=train_id_list[train_size:]
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_SVM=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'SVR_predict_test.csv')
+
+# SVR
+
+from sklearn.preprocessing import Imputer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test1 = pd.read_csv(base_dir+'preprocess/test1_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test1 = test1[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+from sklearn.svm import SVR
+
+model = SVR(gamma='scale', C=1.0, epsilon=0.2)
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+df_train = X_train
+df_test1 = X_test1
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+pred1 = result.predict(df_test1)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test1)
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test1_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_SVM=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'SVR_predict_test1.csv')
+
+# SVR
+
+from sklearn.preprocessing import Imputer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test2 = pd.read_csv(base_dir+'preprocess/test2_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test2 = test2[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+from sklearn.svm import SVR
+
+model = SVR(gamma='scale', C=1.0, epsilon=0.2)
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+df_train = X_train
+df_test2 = X_test2
+df_train_Y_survival_time=Y_train_survival_time
+
+result = model.fit(df_train, df_train_Y_survival_time)
+
+pred1 = result.predict(df_test2)
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+result = model.fit(df_train, df_train_Y_amount_spent)
+
+pred2 = result.predict(df_test2)
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test2_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_SVM=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'SVR_predict_test2.csv')
+
+# lightGBM
+
+import lightgbm as lgb
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+
+train_size=int(len(train)*0.7)
+
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features][0:train_size]
+X_test = train[features][train_size:]
+Y_train_survival_time = train_label['survival_time'][0:train_size]
+Y_train_amount_spent = train_label['amount_spent'][0:train_size]
+Y_test_survival_time = train_label['survival_time'][train_size:]
+Y_test_amount_spent = train_label['amount_spent'][train_size:]
+
+parameters = {'boosting_type' : 'gbdt', 
+              'objective' : 'regression', 
+              'num_leaves' : 100,
+              'learning_rate' : 0.05,
+              'feature_fraction' : 0.5, 
+              'bagging_fraction' : 0.5,
+              'bagging_freq' : 20}
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+df_train = X_train
+df_test = X_test
+df_train_Y_survival_time=Y_train_survival_time
+
+train_X, val_X, train_Y, val_Y = train_test_split(df_train, df_train_Y_survival_time, test_size = 0.2, random_state = 42)
+train_X=pd.DataFrame(train_X)
+
+features = [c for c, col in enumerate(train_X.columns)]
+train_data = lgb.Dataset(train_X, label = train_Y, categorical_feature = features)
+validation_data = lgb.Dataset(val_X, label = val_Y)
+model = lgb.train(parameters, train_data, valid_sets = validation_data, num_boost_round = 5000)
+
+result = df_test.values
+pred1 = model.predict(result)
+
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64    
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+train_X, val_X, train_Y, val_Y = train_test_split(df_train, df_train_Y_amount_spent, test_size = 0.2, random_state = 42)
+
+features = [c for c, col in enumerate(train_X.columns)]
+train_data = lgb.Dataset(train_X, label = train_Y, categorical_feature = features)
+validation_data = lgb.Dataset(val_X, label = val_Y)
+model = lgb.train(parameters, train_data, valid_sets = validation_data, num_boost_round = 5000)
+
+result = df_test.values
+pred2 = model.predict(result)
+
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=train_id_list[train_size:]
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_lightgbm=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'LGB_predict_test.csv')
+
+# lightGBM
+
+import lightgbm as lgb
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test1 = pd.read_csv(base_dir+'preprocess/test1_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test1 = test1[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+parameters = {'boosting_type' : 'gbdt', 
+              'objective' : 'regression', 
+              'num_leaves' : 100,
+              'learning_rate' : 0.05,
+              'feature_fraction' : 0.5, 
+              'bagging_fraction' : 0.5,
+              'bagging_freq' : 20}
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+df_train = X_train
+df_test1 = X_test1
+df_train_Y_survival_time=Y_train_survival_time
+
+train_X, val_X, train_Y, val_Y = train_test_split(df_train, df_train_Y_survival_time, test_size = 0.2, random_state = 42)
+train_X=pd.DataFrame(train_X)
+
+features = [c for c, col in enumerate(train_X.columns)]
+train_data = lgb.Dataset(train_X, label = train_Y, categorical_feature = features)
+validation_data = lgb.Dataset(val_X, label = val_Y)
+model = lgb.train(parameters, train_data, valid_sets = validation_data, num_boost_round = 5000)
+
+result = df_test1.values
+pred1 = model.predict(result)
+
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64    
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+train_X, val_X, train_Y, val_Y = train_test_split(df_train, df_train_Y_amount_spent, test_size = 0.2, random_state = 42)
+
+features = [c for c, col in enumerate(train_X.columns)]
+train_data = lgb.Dataset(train_X, label = train_Y, categorical_feature = features)
+validation_data = lgb.Dataset(val_X, label = val_Y)
+model = lgb.train(parameters, train_data, valid_sets = validation_data, num_boost_round = 5000)
+
+result = df_test1.values
+pred2 = model.predict(result)
+
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test1_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_lightgbm=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'LGB_predict_test1.csv')
+
+# lightGBM
+
+import lightgbm as lgb
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_28_data.csv', index_col = 0)
+test2 = pd.read_csv(base_dir+'preprocess/test2_pca_28_data.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features]
+X_test2 = test2[features]
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+parameters = {'boosting_type' : 'gbdt', 
+              'objective' : 'regression', 
+              'num_leaves' : 100,
+              'learning_rate' : 0.05,
+              'feature_fraction' : 0.5, 
+              'bagging_fraction' : 0.5,
+              'bagging_freq' : 20}
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+df_train = X_train
+df_test2 = X_test2
+df_train_Y_survival_time=Y_train_survival_time
+
+train_X, val_X, train_Y, val_Y = train_test_split(df_train, df_train_Y_survival_time, test_size = 0.2, random_state = 42)
+train_X=pd.DataFrame(train_X)
+
+features = [c for c, col in enumerate(train_X.columns)]
+train_data = lgb.Dataset(train_X, label = train_Y, categorical_feature = features)
+validation_data = lgb.Dataset(val_X, label = val_Y)
+model = lgb.train(parameters, train_data, valid_sets = validation_data, num_boost_round = 5000)
+
+result = df_test2.values
+pred1 = model.predict(result)
+
+pred1 = pred1.tolist()
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64    
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent=Y_train_amount_spent
+
+train_X, val_X, train_Y, val_Y = train_test_split(df_train, df_train_Y_amount_spent, test_size = 0.2, random_state = 42)
+
+features = [c for c, col in enumerate(train_X.columns)]
+train_data = lgb.Dataset(train_X, label = train_Y, categorical_feature = features)
+validation_data = lgb.Dataset(val_X, label = val_Y)
+model = lgb.train(parameters, train_data, valid_sets = validation_data, num_boost_round = 5000)
+
+result = df_test2.values
+pred2 = model.predict(result)
+
+pred2 = pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test2_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_lightgbm=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'LGB_predict_test2.csv')
+
+# RNN lstm
+
+num_layers=6
+seq_length=4
+data_dim=4
+output_dim=1
+num_units=2
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_RNN.csv', index_col = 0)
+
+train_size=int(len(train)*0.7)
+test_size=int(len(train_label)*0.7)
+
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+X_train = train[features][0:train_size]
+Y_train = train_label[label][0:test_size]
+X_test = train[features][train_size:]
+Y_train_survival_time = train_label['survival_time'][0:test_size]
+Y_train_amount_spent = train_label['amount_spent'][0:test_size]
+Y_test_survival_time = train_label['survival_time'][test_size:]
+Y_test_amount_spent = train_label['amount_spent'][test_size:]
+
+train_dataX=[]
+train_dataY=[]
+test_dataX=[]
+
+for i in range(0, int(len(X_train)/4)):
+  train_dataX_=[]
+  for l in range(0,4):
+    x=X_train.iloc[i].tolist()
+    train_dataX_.append(x)
+    i += 1
+  train_dataX.append(train_dataX_)
+
+for i in range(0, int(len(Y_train)/4)):
+  train_dataY_=[]
+  y=Y_train.iloc[i].tolist()
+  train_dataY_.append(y[0])
+  train_dataY.append(train_dataY_)  
+  
+for i in range(0, int(len(X_test)/4)):
+  test_dataX_=[]
+  for l in range(0,4):
+    x=X_test.iloc[i].tolist()
+    test_dataX_.append(x)
+    i += 1
+  test_dataX.append(test_dataX_)
+  
+train_dataX_df=pd.DataFrame(train_dataX)
+train_dataY_df=pd.DataFrame(train_dataY)
+test_dataX_df=pd.DataFrame(test_dataX)
+  
+def make_cell(lstm_size):
+  return tf.nn.rnn_cell.BasicLSTMCell(lstm_size, state_is_tuple=True)
+
+df_train = []
+df_test = []
+df_train_Y_survival_time = []
+df_test_Y_survival_time = []
+for p in range(0, len(train_dataX_df)):
+  df_train.append(train_dataX_df.iloc[p])
+for q in range(0, len(test_dataX_df)):
+  df_test.append(test_dataX_df.iloc[q])
+for o in range(0, len(Y_train_survival_time)):
+  df_train_Y_survival_time.append([Y_train_survival_time.iloc[o]])
+for o in range(0, len(Y_test_survival_time)):
+  df_test_Y_survival_time.append([Y_test_survival_time.iloc[o]])
+
+tf.reset_default_graph()
+
+trainX, testX = np.array(df_train), np.array(df_test)
+trainY, testY = np.array(df_train_Y_survival_time), np.array(df_test_Y_survival_time)
+
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None,1])
+
+cell = tf.contrib.rnn.BasicLSTMCell(num_units, state_is_tuple=True)
+cell = tf.contrib.rnn.MultiRNNCell([make_cell(num_units) for _ in range(num_layers)], state_is_tuple=True)
+
+outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(outputs[:, -1], output_dim, activation_fn=None)
+
+loss = tf.reduce_sum(tf.square(Y_pred-Y)) 
+optimizer = tf.train.AdamOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+  _, l = sess.run([train, loss], feed_dict={X:trainX, Y:trainY})
+
+trainPredict_survival_time = sess.run(Y_pred, feed_dict={X:testX})
+
+pred1 = trainPredict_survival_time
+pred1=pd.DataFrame(pred1)    
+pred1.columns=['survival_time']
+pred1=pred1['survival_time'].tolist()    
+
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent = []
+df_test_Y_amount_spent = []    
+
+for o in range(0, len(Y_train_amount_spent)):
+  df_train_Y_amount_spent.append([Y_train_amount_spent.iloc[o]]) 
+for o in range(0, len(Y_test_amount_spent)):
+  df_test_Y_amount_spent.append([Y_test_amount_spent.iloc[o]]) 
+
+tf.reset_default_graph()
+
+trainX, testX = np.array(df_train), np.array(df_test)
+trainY, testY = np.array(df_train_Y_amount_spent), np.array(df_test_Y_amount_spent)
+
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None,1])
+
+cell = tf.contrib.rnn.BasicLSTMCell(num_units, state_is_tuple=True)
+cell = tf.contrib.rnn.MultiRNNCell([make_cell(num_units) for _ in range(num_layers)], state_is_tuple=True)
+
+outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(outputs[:, -1], output_dim, activation_fn=None)
+
+loss = tf.reduce_sum(tf.square(Y_pred-Y)) 
+optimizer = tf.train.AdamOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+  _, l = sess.run([train, loss], feed_dict={X:trainX, Y:trainY})
+
+trainPredict_amount_spent = sess.run(Y_pred, feed_dict={X:testX})
+
+pred2 = trainPredict_amount_spent
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test1_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_RNN=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'RNN_predict_test.csv')
+
+# RNN lstm
+
+num_layers=6
+seq_length=4
+data_dim=4
+output_dim=1
+num_units=2
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_RNN.csv', index_col = 0)
+test1 = pd.read_csv(base_dir+'preprocess/test1_pca_RNN.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+
+X_train = train[features]
+Y_train = train_label[label]
+X_test1 = test1[features]
+
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+train_dataX=[]
+train_dataY=[]
+test1_dataX=[]
+
+for i in range(0, 40000):
+  train_dataX_=[]
+  for l in range(0,4):
+    x=X_train.iloc[i].tolist()
+    train_dataX_.append(x)
+    i += 1
+  train_dataX.append(train_dataX_)
+
+for i in range(0, 40000):
+  train_dataY_=[]
+  y=Y_train.iloc[i].tolist()
+  train_dataY_.append(y[0])
+  train_dataY.append(train_dataY_)  
+  
+for i in range(0, 20000):
+  test1_dataX_=[]
+  for l in range(0,4):
+    x=X_test1.iloc[i].tolist()
+    test1_dataX_.append(x)
+    i += 1
+  test1_dataX.append(test1_dataX_)
+  
+train_dataX_df=pd.DataFrame(train_dataX)
+train_dataY_df=pd.DataFrame(train_dataY)
+test1_dataX_df=pd.DataFrame(test1_dataX)
+  
+def make_cell(lstm_size):
+  return tf.nn.rnn_cell.BasicLSTMCell(lstm_size, state_is_tuple=True)
+
+df_train = []
+df_test = []
+df_train_Y_survival_time = []
+df_test_Y_survival_time = []
+for p in range(0, len(train_dataX_df)):
+  df_train.append(train_dataX_df.iloc[p])
+for q in range(0, len(test1_dataX_df)):
+  df_test.append(test1_dataX_df.iloc[q])
+for o in range(0, len(Y_train_survival_time)):
+  df_train_Y_survival_time.append([Y_train_survival_time.iloc[o]])
+
+tf.reset_default_graph()
+
+trainX, testX = np.array(df_train), np.array(df_test)
+trainY, testY = np.array(df_train_Y_survival_time), np.array(df_test_Y_survival_time)
+
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None,1])
+
+cell = tf.contrib.rnn.BasicLSTMCell(num_units, state_is_tuple=True)
+cell = tf.contrib.rnn.MultiRNNCell([make_cell(num_units) for _ in range(num_layers)], state_is_tuple=True)
+
+outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(outputs[:, -1], output_dim, activation_fn=None)
+
+loss = tf.reduce_sum(tf.square(Y_pred-Y)) 
+optimizer = tf.train.AdamOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+  _, l = sess.run([train, loss], feed_dict={X:trainX, Y:trainY})
+
+trainPredict_survival_time = sess.run(Y_pred, feed_dict={X:testX})
+
+pred1 = trainPredict_survival_time
+pred1=pd.DataFrame(pred1)    
+pred1.columns=['survival_time']
+pred1=pred1['survival_time'].tolist()    
+
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent = []
+df_test_Y_amount_spent = []    
+
+for o in range(0, len(Y_train_amount_spent)):
+  df_train_Y_amount_spent.append([Y_train_amount_spent.iloc[o]]) 
+
+tf.reset_default_graph()
+
+trainX, testX = np.array(df_train), np.array(df_test)
+trainY, testY = np.array(df_train_Y_amount_spent), np.array(df_test_Y_amount_spent)
+
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None,1])
+
+cell = tf.contrib.rnn.BasicLSTMCell(num_units, state_is_tuple=True)
+cell = tf.contrib.rnn.MultiRNNCell([make_cell(num_units) for _ in range(num_layers)], state_is_tuple=True)
+
+outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(outputs[:, -1], output_dim, activation_fn=None)
+
+loss = tf.reduce_sum(tf.square(Y_pred-Y)) 
+optimizer = tf.train.AdamOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+  _, l = sess.run([train, loss], feed_dict={X:trainX, Y:trainY})
+
+trainPredict_amount_spent = sess.run(Y_pred, feed_dict={X:testX})
+
+pred2 = trainPredict_amount_spent
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test1_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_RNN=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'RNN_predict_test1.csv')
+
+# RNN lstm
+
+num_layers=6
+seq_length=4
+data_dim=4
+output_dim=1
+num_units=2
+
+features = ['PCA_1', 'PCA_2', 'PCA_3', 'PCA_4']
+label = ['survival_time']
+
+train = pd.read_csv(base_dir+'preprocess/train_pca_RNN.csv', index_col = 0)
+test2 = pd.read_csv(base_dir+'preprocess/test2_pca_RNN.csv', index_col = 0)
+train_label=pd.read_csv(root_dir+'train_label.csv', index_col = 0)
+train_label=train_label.sort_values(["acc_id"], ascending=[True])
+train_label=train_label.reset_index()
+
+X_train = train[features]
+Y_train = train_label[label]
+X_test2 = test2[features]
+
+Y_train_survival_time = train_label['survival_time']
+Y_train_amount_spent = train_label['amount_spent']
+
+train_dataX=[]
+train_dataY=[]
+test2_dataX=[]
+
+for i in range(0, 40000):
+  train_dataX_=[]
+  for l in range(0,4):
+    x=X_train.iloc[i].tolist()
+    train_dataX_.append(x)
+    i += 1
+  train_dataX.append(train_dataX_)
+
+for i in range(0, 40000):
+  train_dataY_=[]
+  y=Y_train.iloc[i].tolist()
+  train_dataY_.append(y[0])
+  train_dataY.append(train_dataY_)  
+  
+for i in range(0, 20000):
+  test2_dataX_=[]
+  for l in range(0,4):
+    x=X_test2.iloc[i].tolist()
+    test2_dataX_.append(x)
+    i += 1
+  test2_dataX.append(test2_dataX_)
+  
+train_dataX_df=pd.DataFrame(train_dataX)
+train_dataY_df=pd.DataFrame(train_dataY)
+test2_dataX_df=pd.DataFrame(test2_dataX)
+  
+def make_cell(lstm_size):
+  return tf.nn.rnn_cell.BasicLSTMCell(lstm_size, state_is_tuple=True)
+
+df_train = []
+df_test = []
+df_train_Y_survival_time = []
+df_test_Y_survival_time = []
+for p in range(0, len(train_dataX_df)):
+  df_train.append(train_dataX_df.iloc[p])
+for q in range(0, len(test2_dataX_df)):
+  df_test.append(test2_dataX_df.iloc[q])
+for o in range(0, len(Y_train_survival_time)):
+  df_train_Y_survival_time.append([Y_train_survival_time.iloc[o]])
+
+tf.reset_default_graph()
+
+trainX, testX = np.array(df_train), np.array(df_test)
+trainY, testY = np.array(df_train_Y_survival_time), np.array(df_test_Y_survival_time)
+
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None,1])
+
+cell = tf.contrib.rnn.BasicLSTMCell(num_units, state_is_tuple=True)
+cell = tf.contrib.rnn.MultiRNNCell([make_cell(num_units) for _ in range(num_layers)], state_is_tuple=True)
+
+outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(outputs[:, -1], output_dim, activation_fn=None)
+
+loss = tf.reduce_sum(tf.square(Y_pred-Y)) 
+optimizer = tf.train.AdamOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+  _, l = sess.run([train, loss], feed_dict={X:trainX, Y:trainY})
+
+trainPredict_survival_time = sess.run(Y_pred, feed_dict={X:testX})
+
+pred1 = trainPredict_survival_time
+pred1=pd.DataFrame(pred1)    
+pred1.columns=['survival_time']
+pred1=pred1['survival_time'].tolist()    
+
+for i in range(0, len(pred1)):
+  if pred1[i]<1:
+    pred1[i]=1
+  elif pred1[i]>64:
+    pred1[i]=64
+pred1 = pd.DataFrame(pred1)
+pred1.columns=['survival_time']
+
+df_train_Y_amount_spent = []
+df_test_Y_amount_spent = []    
+
+for o in range(0, len(Y_train_amount_spent)):
+  df_train_Y_amount_spent.append([Y_train_amount_spent.iloc[o]]) 
+
+tf.reset_default_graph()
+
+trainX, testX = np.array(df_train), np.array(df_test)
+trainY, testY = np.array(df_train_Y_amount_spent), np.array(df_test_Y_amount_spent)
+
+X = tf.placeholder(tf.float32, [None, seq_length, data_dim])
+Y = tf.placeholder(tf.float32, [None,1])
+
+cell = tf.contrib.rnn.BasicLSTMCell(num_units, state_is_tuple=True)
+cell = tf.contrib.rnn.MultiRNNCell([make_cell(num_units) for _ in range(num_layers)], state_is_tuple=True)
+
+outputs, _states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+Y_pred = tf.contrib.layers.fully_connected(outputs[:, -1], output_dim, activation_fn=None)
+
+loss = tf.reduce_sum(tf.square(Y_pred-Y)) 
+optimizer = tf.train.AdamOptimizer(0.01)
+train = optimizer.minimize(loss)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for i in range(1000):
+  _, l = sess.run([train, loss], feed_dict={X:trainX, Y:trainY})
+
+trainPredict_amount_spent = sess.run(Y_pred, feed_dict={X:testX})
+
+pred2 = trainPredict_amount_spent
+pred2=pd.DataFrame(pred2)
+pred2.columns=['amount_spent']
+pred2=pred2['amount_spent'].tolist()
+for i in range(0, len(pred2)):
+  if pred2[i]<0:
+    pred2[i]=0
+pred2 = pd.DataFrame(pred2)
+
+predict_label = pd.concat([pred1, pred2], axis=1)
+predict_label['acc_id']=test2_id_list
+predict_label.columns=['survival_time','amount_spent','acc_id']
+predict_label_RNN=predict_label
+
+predict_label.to_csv(base_dir+'model/'+'RNN_predict_test2.csv')
