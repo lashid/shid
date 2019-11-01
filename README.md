@@ -2,5 +2,5 @@
 
 # about Python
 
-# Data Analysis (2019.07.~)
+# Data Analysis (2019.03.~)
 # Algorithm (2019.09.~)
