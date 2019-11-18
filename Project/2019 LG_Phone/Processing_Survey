@@ -1,7 +1,6 @@
 import pandas as pd
-import numpy as np
 
-df_=pd.read_csv('C:/Users/jinha/Downloads/survey.csv', index_col=0)
+df_=pd.read_csv('C:/Users/jinha/Downloads/new.csv', index_col=0)
 L=[]
 df__=pd.DataFrame(columns=['answer'], dtype=int)
 for i in range(1, len(df_)+1):
@@ -63,5 +62,6 @@ for i in range(len(df__)):
     else:
         continue
 
+df__=df__.set_index('answer')
+df__.to_csv('C:/Users/jinha/Downloads/new_result.csv')
 print(df__.head())
-df__.to_csv('C:/Users/jinha/Downloads/survey_result.csv')
