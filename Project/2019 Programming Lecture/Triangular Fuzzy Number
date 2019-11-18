@@ -1,0 +1,88 @@
+from scipy import misc
+import random
+import math
+import sympy
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+print('h is holding cost per unit per unit time')
+h=20 #5~50
+print('A is fixed ordering (setup) cost per order')
+A=200 #100~300
+print('D is average demand per year')
+D=600 #200~1000
+print('Sigma is standard deviation of lead time demand')
+Sigma=6 #3~11
+print('Alpha and Theta are just parameters')
+Alpha=156 #5~1000
+Theta=1 #0.5~2.25
+print('Beta is the fraction of customer demand that is met routinely')
+Beta=0.98 #0.95~0.99
+e=2.71828
+
+def Fuzzy(l,m,u,x):
+    if x<l or x>u:
+        return 0
+    elif x>=l and m>=x:
+        y=((1/(m-l))*x)-(l/(m-l))
+        return y
+    elif x>=m and u>=x:
+        y=((1/(m-u))*x)-(u/(m-u))
+        return y
+    else:
+        print('Fuzzy Failed')
+        return None
+temp_=[]
+for i in range(5,51):
+    temp_.append(Fuzzy(5,20,50,i))
+
+plt.figure(figsize=(15,15))
+plt.scatter(range(5,51),temp_)
+plt.show()
+# Triangular Fuzzy Number
+# 디퍼지해서 나온 결과로 계산하면 될 듯
+
+
+L_Beta=(math.log((4*(1-Beta)*Alpha*Theta*D)/(h*(Sigma**2))))/Theta
+Q_Beta=((4*D*(1-Beta)*(A+Alpha*e**(-Theta*L_Beta))+(h*(Sigma**2)*L_Beta))/(2*(1-Beta)*(2*Beta-1)*h))**(1/2)
+Delta_Beta=(((Sigma**2)*L_Beta)/(4*(1-Beta)*Q_Beta))-(1-Beta)*Q_Beta
+
+def NewtonsMethod(f, Q, tolerance=0.000001):
+    while True:
+        if misc.derivative(f, Q)==0:
+            break
+        else:
+            x1 = Q - (float(f(Q)) / float(misc.derivative(f, Q)))
+            t = abs(float(x1 - Q))
+            if t < tolerance:
+                break
+            Q = x1
+    return Q
+
+def Cost(Q):
+    return ((A*D)/Q)+h*((Q/2)+Delta_Beta)+(D*Alpha*e**(-Theta*L_Beta))/Q
+
+def Cost_diff(Q):
+    return ((((-1)*(A*D))/(Q**2)) - ((Alpha*D*(e**((-1)*(L_Beta*Theta))))/(Q**2)) + ((h)*(0.48))-(h*L_Beta*(Sigma**2)/(4*(1-Beta)*(Q**2))))
+
+def Cost_L(L):
+    return ((A*D)/Q_Beta)+h*((Q_Beta/2)+Delta_Beta)+(D*Alpha*e**(-Theta*L))/Q_Beta
+
+def Cost_diff_L(L):
+    return ((h*(Sigma**2))/(4*(1-Beta)*Q_Beta)-(D*Alpha*Theta*e**(-Theta*L))/Q_Beta)
+
+x = 5
+
+x0 = NewtonsMethod(Cost_diff_L, x)
+
+print('initial L: ', x)
+print('optimal L: ', x0)
+
+x = 170
+
+x0 = NewtonsMethod(Cost_diff, x)
+
+print('initial Q: ', x)
+print('optimal Q: ', x0)
+print("optimal Cost(x0) = ", Cost(x0))
