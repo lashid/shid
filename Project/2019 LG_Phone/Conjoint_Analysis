@@ -1,16 +1,23 @@
 import pandas as pd
 import numpy as np
+import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
-import seaborn as sns
+from sklearn import preprocessing
 import matplotlib.pyplot as plt
 
-rank_data=pd.read_csv('C:/Users/jinha/Downloads/survey_example.csv', index_col=0)
+rank_data=pd.read_csv('C:/Users/jinha/Downloads/survey_result_2_1.csv', index_col=0)
 data=pd.DataFrame()
 data=rank_data
 
 conjoint_data = pd.get_dummies(rank_data,columns =['camera','battery','memory','CPU'])
 print(conjoint_data.head())
+
+fullNames = {"camera_1": "camera_good","camera_2": "camera_normal",'camera_3':'camera_bad','battery_1':'battery_good','battery_2':'battery_normal','battery_3':'battery_bad','memory_1':'memory_good','memory_2':'memory_normal','memory_3':'memory_bad','CPU_1':'CPU_good','CPU_2':'CPU_normal','CPU_3':'CPU_bad'
+          }
+
+conjoint_data.rename(columns=fullNames, inplace=True)
+conjoint_data = sm.add_constant(conjoint_data)
 
 y=rank_data.index
 res = sm.OLS(y, conjoint_data, family=sm.families.Binomial()).fit()
@@ -96,3 +103,66 @@ plt.ylabel('attributes')
 plt.xlabel('% relative importance')
 plt.yticks(xbar, alt_data['attr'])
 plt.show()
+
+X = conjoint_data
+Y = rank_data.index
+linearRegression = sm.GLM(Y, X).fit()
+print(linearRegression.summary())
+
+conjoint_attributes=['camera_good','camera_normal','camera_bad','battery_good','battery_normal','battery_bad','memory_good','memory_normal','memory_bad','CPU_good','CPU_normal','CPU_bad']
+
+level_name = []
+part_worth = []
+part_worth_range = []
+end = 1
+for item in conjoint_attributes:
+    nlevels = len(list(set(conjoint_data[item])))
+    level_name.append(list(set(conjoint_data[item])))
+    begin = end
+    end = begin + nlevels - 1
+    new_part_worth = list(linearRegression.params[begin:end])
+    new_part_worth.append((-1) * sum(new_part_worth))
+    part_worth_range.append(max(new_part_worth) - min(new_part_worth))
+    part_worth.append(new_part_worth)
+    # end set to begin next iteration
+
+print(part_worth)
+print(new_part_worth)
+
+attribute_importance = []
+for item in part_worth_range:
+    attribute_importance.append(round(100 * (item / sum(part_worth_range)),2))
+
+
+effect_name_dict = {"camera_good": "camera_good","camera_normal": "camera_normal",'camera_bad':'camera_bad','battery_good':'battery_good','battery_normal':'battery_normal','battery_bad':'battery_bad','memory_good':'memory_good','memory_normal':'memory_normal','memory_bad':'memory_bad','CPU_good':'CPU_good','CPU_normal':'CPU_normal','CPU_bad':'CPU_bad'
+          }
+
+
+#print out parthworth's for each level
+estimates_of_choice = []
+index = 0
+for item in conjoint_attributes :
+    print ("\n Attribute : " , effect_name_dict[item])
+    print ("\n Importance : " , attribute_importance[index])
+    print('    Level Part-Worths')
+    for level in range(len(level_name[index])):
+        print('       ',level_name[index][level], part_worth[index][level])
+    index = index + 1
+
+df2=pd.read_csv('C:/Users/jinha/Downloads/survey_result_2_2.csv')
+
+utility_scores = df2.values.sum(axis=1)
+max_utility = np.argmax(utility_scores)
+print("The index of combination combination with hightest sum of utility scores is")
+print(df2.loc[max_utility])
+
+total_utility=0
+c= 100/(12*20)
+for item in utility_scores:
+    total_utility = total_utility + np.exp(c*item)
+
+for item in utility_scores:
+    probabilty = np.exp(c*item)/total_utility
+    itemindex = np.where(utility_scores==item)
+
+    print('Market share of profile %s is %s ', itemindex, probabilty*100)
