@@ -1,0 +1,250 @@
+#Google Colaboratory
+from google.colab import drive
+drive.mount('/gdrive', force_remount=True)
+
+#Importing
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import MinMaxScaler
+minMaxScaler = MinMaxScaler()
+from sklearn.neighbors import LocalOutlierFactor
+clf = LocalOutlierFactor(n_neighbors=20, contamination=0.1)
+import tensorflow as tf
+import numpy as np
+import glob
+import os
+import pandas as pd
+
+#Read Csvs
+root_dir = '/gdrive/My Drive/Data/'
+csv_list = os.listdir(root_dir)
+
+train_df = pd.read_csv("/gdrive/My Drive/농사직설/2019 Fire Accident Forecasting/Raw_Data/PJT002_train.csv")
+val_df = pd.read_csv("/gdrive/My Drive/농사직설/2019 Fire Accident Forecasting/Raw_Data/PJT002_validation.csv")
+test_df = pd.read_csv("/gdrive/My Drive/농사직설/2019 Fire Accident Forecasting/Raw_Data/PJT002_test.csv")
+
+train_df.head(20)
+
+for col in train_df:
+  if train_df[col].isnull().sum() > 40000: train_df.drop(col, axis=1, inplace=True)
+
+train_df.head(10)
+
+temp_list=[]
+for index in range(len(train_df)):
+  print(index, train_df.iloc[index].isnull().sum())
+  if train_df.iloc[index].isnull().sum()>=120:
+    temp_list.append(index)
+
+train_df.drop(temp_list, axis=0, inplace=True)
+
+train_df.to_csv("/gdrive/My Drive/농사직설/2019 Fire Accident Forecasting/Raw_Data/로우제거후.csv")
+
+#@title 기본 제목 텍스트
+nom_list=['bldng_us','bldng_archtctr','dt_of_athrztn','bldng_us_clssfctn','jmk','rgnl_ar_nm','rgnl_ar_nm2','lnd_us_sttn_nm','rd_sd_nm','emd_nm','trgt_crtr','mlt_us_yn','fr_fghtng_fclt_spcl_css_5_yn','fr_fghtng_fclt_spcl_css_6_yn','us_yn','dngrs_thng_yn','slf_fr_brgd_yn','blk_dngrs_thng_mnfctr_yn','cltrl_hrtg_yn']
+
+
+for i in nom_list:
+  print(train_df[i].describe())
+  print('*****************************************')
+
+corrmat = train_df.corr()
+f, ax = plt.subplots(figsize=(80, 80))
+sns.heatmap(corrmat, vmax=.8, square=True, annot=True)
+
+df=train_df
+y=df['fr_yn']
+columns = df.columns.tolist()
+
+# Filter the columns to remove ones we don't want.
+nom_list.extend(['fr_yn'])
+columns = [c for c in columns if c not in nom_list]
+X=df[columns]
+
+#RFE
+
+from sklearn.feature_selection import RFE
+
+model = LogisticRegression()
+rfe = RFE(model, 8)
+fit = rfe.fit(X, y)
+
+print("Num Features: %d") % fit.n_features_
+print("Selected Features: %s") % fit.support_
+print("Feature Ranking: %s") % fit.ranking_
+
+#Univariate Selection (T-test, ANOVA, Coefficient and so on)
+
+from sklearn.feature_selection import SelectKBest, f_classif
+
+selectK = SelectKBest(score_func=f_classif, k=8)
+X = selectK.fit_transform(X, y)
+
+#Extra Trees
+
+from sklearn.ensemble import ExtraTreesClassifier
+
+etc_model = ExtraTreesClassifier()
+etc_model.fit(X, y)
+
+print(etc_model.feature_importances_)
+feature_list = pd.concat([pd.Series(X.columns), pd.Series(etc_model.feature_importances_)], axis=1)
+feature_list.columns = ['features_name', 'importance']
+feature_list.sort_values("importance", ascending =False)[:8]
+
+#RandomForest_Feature_Importance
+
+import lightgbm as lgb
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+
+df=train_df
+
+from sklearn.ensemble import RandomForestRegressor
+
+columns = df.columns.tolist()
+
+# Filter the columns to remove ones we don't want.
+nom_list.extend(['dt_of_fr','fr_yn'])
+columns = [c for c in columns if c not in nom_list]
+
+# Store the variable we'll be predicting on.
+target = "fr_yn"
+
+from sklearn.preprocessing import MinMaxScaler
+minMaxScaler = MinMaxScaler()
+
+df_scaled= minMaxScaler.fit_transform(df[columns])
+df_scaled=pd.DataFrame(df_scaled)
+df_scaled.columns=columns
+
+x_train, x_test, y_train, y_test = train_test_split(df_scaled[columns], df[target],
+
+                                                    stratify=df[target], random_state=0)
+
+df_scaled.to_csv('train_scaled.csv')
+n_feature = df_scaled[columns].shape[1]
+score_n_tr_est = []
+
+score_n_te_est = []
+
+score_m_tr_mft = []
+
+score_m_te_mft = []
+
+for i in np.arange(1, n_feature + 1):  # n_estimators와 mat_features는 모두 0보다 큰 정수여야 하므로 1부터 시작
+
+    params_n = {'n_estimators': i, 'max_features': 'auto', 'n_jobs': -1}  # **kwargs parameter
+
+    params_m = {'n_estimators': 10, 'max_features': i, 'n_jobs': -1}
+
+    forest_n = RandomForestClassifier(**params_n).fit(x_train, y_train)
+
+    forest_m = RandomForestClassifier(**params_m).fit(x_train, y_train)
+
+    score_n_tr = forest_n.score(x_train, y_train)
+
+    score_n_te = forest_n.score(x_test, y_test)
+
+    score_m_tr = forest_m.score(x_train, y_train)
+
+    score_m_te = forest_m.score(x_test, y_test)
+
+    score_n_tr_est.append(score_n_tr)
+
+    score_n_te_est.append(score_n_te)
+
+    score_m_tr_mft.append(score_m_tr)
+
+    score_m_te_mft.append(score_m_te)
+
+index = np.arange(len(score_n_tr_est))
+
+plt.plot(index, score_n_tr_est, label='n_estimators train score', color='lightblue', ls='--')  # ls: linestyle
+
+plt.plot(index, score_m_tr_mft, label='max_features train score', color='orange', ls='--')
+
+plt.plot(index, score_n_te_est, label='n_estimators test score', color='lightblue')
+
+plt.plot(index, score_m_te_mft, label='max_features test score', color='orange')
+
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),
+
+           ncol=2, fancybox=True, shadow=False)  # fancybox: 박스모양, shadow: 그림자
+
+plt.xlabel('number of parameter', size=15)
+
+plt.ylabel('score', size=15)
+
+plt.show()
+
+forest = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+
+forest.fit(x_train, y_train)
+
+plt.barh(index, forest.feature_importances_, align='center')
+
+plt.yticks(index, columns2)
+
+plt.ylim(-1, n_feature)
+
+plt.xlabel('feature importance', size=15)
+
+plt.ylabel('feature', size=15)
+
+plt.show()
+
+#XGB_Feature_Importance
+
+import xgboost as xgb
+from xgboost import XGBClassifier
+
+# load data
+# split data into X and y
+y = train_df['fr_yn']
+X = train_df.drop(columns, axis=1)
+# fit model no training data
+model = XGBClassifier()
+model.fit(X, y)
+# feature importance
+print(model.feature_importances_)
+# plot
+pyplot.bar(range(len(model.feature_importances_)), model.feature_importances_)
+pyplot.show()
+
+weight=model.get_booster().get_score(importance_type='weight')
+
+fig, ax = plt.subplots(figsize=(12,18))
+xgb.plot_importance(weight, max_num_features=50, height=0.8, ax=ax)
+plt.show()
+
+gain=model.get_booster().get_score(importance_type='gain')
+fig, ax = plt.subplots(figsize=(12,18))
+xgb.plot_importance(gain, max_num_features=50, height=0.8, ax=ax)
+plt.show()
+
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+corrmat = X.corr()
+#f, ax = plt.subplots(figsize=(40, 20))
+#sns.heatmap(corrmat, vmax=.8, square=True, annot=True)
+
+#plt.show()
+
+from sklearn.datasets import load_boston
+from sklearn.ensemble import RandomForestRegressor
+import numpy as np
+#Load boston housing dataset as an example
+names = X.columns
+rf = RandomForestRegressor()
+rf.fit(X, y)
+print("Features sorted by their score:")
+print(sorted(zip(map(lambda x: round(x, 4), rf.feature_importances_), names),
+             reverse=True))
