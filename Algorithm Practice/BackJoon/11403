@@ -1,0 +1,29 @@
+N=int(input())
+L=[]
+for i in range(N):
+    temp=list(map(int, input().split(' ')))
+    L.append(temp)
+
+answer=[[0 for i in range(N)] for j in range(N)]
+for i in range(N):
+    open=[i]
+    already=[]
+    while open:
+        current=open.pop(0)
+        if current not in already:
+            already.append(current)
+        for l in range(N):
+            if L[current][l]==1:
+                answer[i][l]=1
+                if l not in already and l not in open:
+                    open.append(l)
+
+for i in range(N):
+    for l in range(N):
+        if l!=(N-1):
+            print(answer[i][l], end=' ')
+        else:
+            if i!=(N-1):
+                print(answer[i][l], end='\n')
+            else:
+                print(answer[i][l], end='')
