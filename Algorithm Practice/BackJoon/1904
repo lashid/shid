@@ -1,0 +1,8 @@
+N=int(input())
+L=[1,2]
+if N<=2:
+    print(L[N-1])
+else:
+    for i in range(2, N):
+        L.append((L[i-1]+L[i-2])%15746)
+    print(L.pop())
