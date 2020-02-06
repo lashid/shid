@@ -1,0 +1,20 @@
+L=list(map(int, input().split(' ')))
+N,M=L[0],L[1]
+
+def solution(answer,N,M):
+    candidate=[x for x in range(max(answer),N+1)]
+    for i in range(len(answer)):
+        if answer[i] in candidate:
+            candidate.remove(answer[i])
+    if len(answer)==M:
+        print(' '.join(list(map(str, answer))))
+    elif candidate!=[]:
+        for i in candidate:
+            temp_list=[]
+            temp_list.extend(answer)
+            temp_list.append(i)
+            solution(temp_list,N,M)
+    else:
+        return answer
+for i in range(1, N+1):
+    solution([i],N,M)
