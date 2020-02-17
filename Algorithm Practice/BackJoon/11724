@@ -1,0 +1,26 @@
+import sys
+sys.setrecursionlimit(100000)
+
+L=list(map(int, sys.stdin.readline().split()))
+N,M=L[0],L[1]
+candidate=[list(map(int, sys.stdin.readline().rstrip().split())) for i in range(M)]
+answer=0
+check=[False for i in range(N)]
+control=[[] for i in range(N)]
+
+def solution(x):
+    if not check[x]:
+        check[x]=True
+        for i in control[x]:
+            solution(i-1)
+
+for i in candidate:
+    control[i[0]-1].append(i[1])
+    control[i[1]-1].append(i[0])
+for i in range(N):
+    control[i]=list(set(control[i]))
+for i in range(N):
+    if not check[i]:
+        solution(i)
+        answer+=1
+print(answer)
