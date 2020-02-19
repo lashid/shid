@@ -1,0 +1,27 @@
+import sys
+sys.setrecursionlimit(100000)
+
+rows,columns=map(int, sys.stdin.readline().split())
+data=[list(map(int, list(str(sys.stdin.readline().rstrip())))) for i in range(rows)]
+check=[[False]*columns for i in range(rows)]
+should=[[0,0]]
+already=[]
+
+def search(x,y):
+    check[x][y]=True
+    for dx,dy in (1,0),(-1,0),(0,1),(0,-1):
+        nx,ny=x+dx,y+dy
+        if (0<=nx<rows) and (0<=ny<columns) and data[nx][ny]==1 and not check[nx][ny] and [nx,ny] not in already:
+            should.append([nx,ny])
+            already.append([nx,ny])
+
+count=1
+while True:
+    for i in range(len(should)):
+        x,y=map(int, should.pop(0))
+        if (x,y)==(rows-1,columns-1):break
+        search(x,y)
+    if (x,y)==(rows-1,columns-1):break
+    count+=1
+
+print(count)
