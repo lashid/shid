@@ -1,0 +1,3 @@
+for repeat in range(int(input())):
+    number=int(input())
+    print(int(number**(1/2)))
