@@ -1,0 +1,8 @@
+data=int(input())
+current=data
+counts=int()
+while True:
+    counts += 1
+    current=((current%10)*10)+((current//10)+(current%10))%10
+    if current==data:break    
+print(counts)
