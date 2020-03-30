@@ -1,0 +1,49 @@
+import re
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import font_manager,rc
+from konlpy.tag import Okt
+from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score
+from sklearn.manifold import TSNE
+plt.figure(figsize=(50, 50))
+
+text_data=open('text_data.txt', 'r',-1,"utf-8").read()
+text_data=re.sub('[0123456789-=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]', '', text_data)
+stopwords=open('stopwords_data.txt', 'r',-1,"utf-8").read()
+okt = Okt()
+
+def tokenizer_stopword(text) :
+    tokens = okt.morphs(text, stem=True)
+    tokens = [token for token in tokens if token not in stopwords]
+    return tokens
+
+tokens=tokenizer_stopword(text_data)
+
+tfidf_vect = TfidfVectorizer(tokenizer = tokenizer_stopword, ngram_range = (1, 2), min_df = 3, max_df = 0.9)
+a_tfidf_sp=tfidf_vect.fit_transform(tokens)
+tfidf_dict = tfidf_vect.get_feature_names()
+data_array = a_tfidf_sp.toarray()
+data = pd.DataFrame(data_array, columns=tfidf_dict)
+data.shape
+
+tsne = TSNE(n_components=2, n_iter=10000, verbose=1)
+Z = tsne.fit_transform(data_array.T)
+
+font_path = 'C:/Users/LG25/Downloads/NanumBarunGothic.ttf'
+font_name = font_manager.FontProperties(fname=font_path).get_name()
+matplotlib.rc('font',family=font_name, size=60)
+plt.scatter(Z[:,0], Z[:,1])
+for i in range(len(tfidf_dict)):
+    plt.annotate(s=tfidf_dict[i].encode("utf8").decode("utf8"), xy=(Z[i,0], Z[i,1]))
+
+plt.draw()

@@ -1,0 +1,67 @@
+import pandas as pd
+
+df_=pd.read_csv('C:/Users/jinha/Downloads/new.csv', index_col=0)
+L=[]
+df__=pd.DataFrame(columns=['answer'], dtype=int)
+for i in range(1, len(df_)+1):
+    temp_=df_.loc[i,'answer'].split(' ')
+    L.extend(temp_)
+
+df__['answer']=L
+df__['camera']=None
+df__['battery']=None
+df__['display']=None
+df__['CPU']=None
+
+for i in range(len(df__)):
+    if df__.loc[i,'answer']=='1':
+        df__.loc[i, 'camera']=3
+        df__.loc[i, 'battery']=2
+        df__.loc[i, 'display']=3
+        df__.loc[i, 'CPU']=1
+    elif df__.loc[i,'answer']=='2':
+        df__.loc[i, 'camera']=3
+        df__.loc[i, 'battery']=3
+        df__.loc[i, 'display']=1
+        df__.loc[i, 'CPU']=2
+    elif df__.loc[i,'answer']=='3':
+        df__.loc[i, 'camera']=2
+        df__.loc[i, 'battery']=1
+        df__.loc[i, 'display']=3
+        df__.loc[i, 'CPU']=2
+    elif df__.loc[i,'answer']=='4':
+        df__.loc[i, 'camera']=2
+        df__.loc[i, 'battery']=3
+        df__.loc[i, 'display']=2
+        df__.loc[i, 'CPU']=1
+    elif df__.loc[i,'answer']=='5':
+        df__.loc[i, 'camera']=2
+        df__.loc[i, 'battery']=2
+        df__.loc[i, 'display']=1
+        df__.loc[i, 'CPU']=3
+    elif df__.loc[i,'answer']=='6':
+        df__.loc[i, 'camera']=1
+        df__.loc[i, 'battery']=3
+        df__.loc[i, 'display']=3
+        df__.loc[i, 'CPU']=3
+    elif df__.loc[i,'answer']=='7':
+        df__.loc[i, 'camera']=1
+        df__.loc[i, 'battery']=1
+        df__.loc[i, 'display']=1
+        df__.loc[i, 'CPU']=1
+    elif df__.loc[i,'answer']=='8':
+        df__.loc[i, 'camera']=3
+        df__.loc[i, 'battery']=1
+        df__.loc[i, 'display']=2
+        df__.loc[i, 'CPU']=3
+    elif df__.loc[i,'answer']=='9':
+        df__.loc[i, 'camera']=1
+        df__.loc[i, 'battery']=2
+        df__.loc[i, 'display']=2
+        df__.loc[i, 'CPU']=2
+    else:
+        continue
+
+df__=df__.set_index('answer')
+df__.to_csv('C:/Users/jinha/Downloads/new_result.csv')
+print(df__.head())

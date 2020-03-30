@@ -1,0 +1,195 @@
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+from sklearn import preprocessing
+import matplotlib.pyplot as plt
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+rank_data=pd.read_csv('C:/Users/jinha/Downloads/survey_del_result.csv', index_col=0)
+data=pd.DataFrame()
+data=rank_data
+
+conjoint_data = pd.get_dummies(rank_data,columns =['camera','battery','display','CPU'])
+print(conjoint_data.head())
+
+fullNames = {"camera_1": "camera_good","camera_2": "camera_normal",'camera_3':'camera_bad','battery_1':'battery_good','battery_2':'battery_normal','battery_3':'battery_bad','display_1':'display_medium','display_2':'display_small','display_3':'display_big','CPU_1':'CPU_good','CPU_2':'CPU_normal','CPU_3':'CPU_bad'
+          }
+
+conjoint_data.rename(columns=fullNames, inplace=True)
+conjoint_data = sm.add_constant(conjoint_data)
+conjoint_data = conjoint_data[['const','camera_good','camera_normal','camera_bad','battery_good','battery_normal','battery_bad','display_big','display_medium','display_small','CPU_good','CPU_normal','CPU_bad']]
+y=rank_data.index
+res = sm.OLS(y, conjoint_data, family=sm.families.Binomial()).fit()
+print(res.summary())
+
+df_res = pd.DataFrame({
+    'param_name': res.params.keys()
+    , 'param_w': res.params.values
+    , 'pval': res.pvalues
+})
+
+df_res=df_res.drop(df_res.index[0])
+# adding field for absolute of parameters
+df_res['abs_param_w'] = abs(df_res['param_w'])
+# marking field is significant under 95% confidence interval
+df_res['is_sig_95'] = (df_res['pval'] < 0.05)
+# constructing color naming for each param
+df_res['c'] = ['blue' if x else 'red' for x in df_res['is_sig_95']]
+
+# make it sorted by abs of parameter value
+df_res = df_res.sort_values(by='abs_param_w', ascending=True)
+
+f, ax = plt.subplots(figsize=(14, 8))
+plt.title('Part Worth')
+pwu = df_res['param_w']
+xbar = np.arange(len(pwu))
+plt.barh(xbar, pwu, color=df_res['c'])
+plt.yticks(xbar, labels=df_res['param_name'])
+plt.show()
+
+range_per_feature = dict()
+for key, coeff in res.params.items():
+    sk = key.split('_')
+    feature = sk[0]
+    if len(sk) == 1:
+        feature = key
+    if feature not in range_per_feature:
+        range_per_feature[feature] = list()
+
+    range_per_feature[feature].append(coeff)
+
+# importance per feature is range of coef in a feature
+# while range is simply max(x) - min(x)
+importance_per_feature = {
+    k: max(v) - min(v) for k, v in range_per_feature.items()
+}
+
+# compute relative importance per feature
+# or normalized feature importance by dividing
+# sum of importance for all features
+total_feature_importance = sum(importance_per_feature.values())
+relative_importance_per_feature = {
+    k: 100 * round(v/total_feature_importance, 3) for k, v in importance_per_feature.items()
+}
+alt_data = pd.DataFrame(
+    list(importance_per_feature.items()),
+    columns=['attr', 'importance']
+).sort_values(by='importance', ascending=False)
+
+alt_data=alt_data.drop(0)
+
+f, ax = plt.subplots(figsize=(12, 8))
+xbar = np.arange(len(alt_data['attr']))
+plt.title('Importance')
+plt.barh(xbar, alt_data['importance'])
+for i, v in enumerate(alt_data['importance']):
+    ax.text(v , i + .25, '{:.2f}'.format(v))
+plt.ylabel('attributes')
+plt.xlabel('% importance')
+plt.yticks(xbar, alt_data['attr'])
+plt.show()
+
+alt_data = pd.DataFrame(
+    list(relative_importance_per_feature.items()),
+    columns=['attr', 'relative_importance (pct)']
+).sort_values(by='relative_importance (pct)', ascending=False)
+
+alt_data=alt_data.drop(0)
+
+f, ax = plt.subplots(figsize=(12, 8))
+xbar = np.arange(len(alt_data['attr']))
+plt.title('Relative importance / Normalized importance')
+plt.barh(xbar, alt_data['relative_importance (pct)'])
+for i, v in enumerate(alt_data['relative_importance (pct)']):
+    ax.text(v , i + .25, '{:.2f}%'.format(v))
+plt.ylabel('attributes')
+plt.xlabel('% relative importance')
+plt.yticks(xbar, alt_data['attr'])
+plt.show()
+
+X = conjoint_data
+Y = rank_data.index
+linearRegression = sm.GLM(Y, X).fit()
+print(linearRegression.summary())
+
+conjoint_attributes=['camera_good','camera_normal','camera_bad','battery_good','battery_normal','battery_bad','display_big','display_medium','display_small','CPU_good','CPU_normal','CPU_bad']
+
+level_name = []
+part_worth = []
+part_worth_range = []
+end = 1
+for item in conjoint_attributes:
+    nlevels = len(list(set(conjoint_data[item])))
+    level_name.append(list(set(conjoint_data[item])))
+    begin = end
+    end = begin + nlevels - 1
+    new_part_worth = list(linearRegression.params[begin:end])
+    new_part_worth.append((-1) * sum(new_part_worth))
+    part_worth_range.append(max(new_part_worth) - min(new_part_worth))
+    part_worth.append(new_part_worth)
+    # end set to begin next iteration
+
+attribute_importance = []
+for item in part_worth_range:
+    attribute_importance.append(round(100 * (item / sum(part_worth_range)),2))
+
+
+effect_name_dict = {"camera_good": "camera_good","camera_normal": "camera_normal",'camera_bad':'camera_bad','battery_good':'battery_good','battery_normal':'battery_normal','battery_bad':'battery_bad','display_big':'display_big','display_medium':'display_medium','display_small':'display_small','CPU_good':'CPU_good','CPU_normal':'CPU_normal','CPU_bad':'CPU_bad'
+          }
+
+
+#print out parthworth's for each level
+estimates_of_choice = []
+index = 0
+for item in conjoint_attributes :
+    print ("\n Attribute : " , effect_name_dict[item])
+    print ("\n Importance : " , attribute_importance[index])
+    print('    Level Part-Worths')
+    for level in range(len(level_name[index])):
+        print('       ',level_name[index][level], part_worth[index][level])
+    index = index + 1
+
+df_logit=pd.read_csv('C:/Users/jinha/Downloads/survey_logit.csv',index_col='answer')
+df_logit.index
+df_logit=pd.get_dummies(df_logit,columns =['camera','battery','display','CPU'])
+
+df_logit['camera_1']*=part_worth[0][0]
+df_logit['camera_2']*=part_worth[1][0]
+df_logit['camera_3']*=part_worth[2][0]
+df_logit['battery_1']*=part_worth[3][0]
+df_logit['battery_2']*=part_worth[4][0]
+df_logit['battery_3']*=part_worth[5][0]
+df_logit['display_1']*=part_worth[6][0]
+df_logit['display_2']*=part_worth[7][0]
+df_logit['display_3']*=part_worth[8][0]
+df_logit['CPU_1']*=part_worth[9][0]
+df_logit['CPU_2']*=part_worth[10][0]
+df_logit['CPU_3']*=part_worth[11][0]
+print(df_logit)
+utility_scores = df_logit.values.sum(axis=1)
+max_utility = np.argmax(utility_scores)
+print("The index of combination combination with hightest sum of utility scores is")
+print(df_logit.loc[max_utility])
+
+total_utility=0
+c= 100/(12*20)
+for item in utility_scores:
+    total_utility = total_utility + np.exp(c*item)
+x_bar=[]
+for item in utility_scores:
+    probability = np.exp(c*item)/total_utility
+    itemindex = np.where(utility_scores==item)
+    print('Market share of profile %s is %s ', itemindex, probability*100)
+    x_bar.append(probability*100)
+
+f, ax = plt.subplots(figsize=(12, 8))
+xbar = np.arange(len(x_bar))
+plt.title('Logit Market Model')
+plt.barh(xbar, x_bar)
+plt.ylabel('Survey Models')
+plt.xlabel('% Market Share')
+plt.yticks(xbar, ['Model 1','Model 2','Model 3','Model 4','Model 5','Model 6','Model 7','Model 8','Model 9'])
+plt.show()

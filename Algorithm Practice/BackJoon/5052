@@ -1,0 +1,19 @@
+import sys
+for i in range(int(input())):
+    L = [sys.stdin.readline().strip() for _ in range(int(input()))]
+    answer='YES'
+    checker=True
+    L.sort()
+    for k in range(len(L)-1):
+        if checker==False:
+            break
+        test=L.pop(0)
+        control=L[0]
+        if len(test)<len(control):
+            if test==control[:len(test)]:
+                answer='NO'
+                checker=False
+                break
+            else:
+                continue
+    print(answer)

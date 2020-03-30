@@ -1,0 +1,21 @@
+L=list(map(int, input().split(' ')))
+N,M=L[0],L[1]
+global candidate
+candidate=sorted(list(map(int, input().split(' '))))
+def solution(answer,N,M):
+    temp_candidate=list(filter(lambda x:x>max(answer), candidate))
+    for i in range(len(answer)):
+        if answer[i] in temp_candidate:
+            temp_candidate.remove(answer[i])
+    if len(answer)==M:
+        print(' '.join(list(map(str, answer))))
+    elif temp_candidate!=[]:
+        for i in temp_candidate:
+            temp_list=[]
+            temp_list.extend(answer)
+            temp_list.append(i)
+            solution(temp_list,N,M)
+    else:
+        return answer
+for i in candidate:
+    solution([i],N,M)

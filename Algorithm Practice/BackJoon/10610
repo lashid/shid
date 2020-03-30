@@ -1,0 +1,12 @@
+N=list(map(int, str(input())))
+
+if 0 not in N:
+    print(-1)
+elif sum(N)%3!=0:
+    print(-1)
+else:
+    N.sort(reverse=True)
+    answer = str()
+    for number in N:
+        answer+=str(number)
+    print(int(answer))

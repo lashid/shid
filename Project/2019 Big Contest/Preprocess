@@ -1,0 +1,640 @@
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sys
+
+import sklearn
+
+from sklearn.decomposition import FactorAnalysis
+from sklearn import datasets
+from sklearn.preprocessing import Imputer
+from sklearn.model_selection import train_test_split
+
+import tensorflow as tf
+import numpy as np
+import glob
+import os
+import pandas as pd
+import keras
+
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_val_score
+
+from sklearn.preprocessing import MinMaxScaler
+minMaxScaler = MinMaxScaler()
+
+from sklearn.neighbors import LocalOutlierFactor
+clf = LocalOutlierFactor(n_neighbors=15, contamination=0.10)
+
+from sklearn.decomposition import PCA
+
+root_dir='/content/gdrive/My Drive/Data/raw/' # Raw_Data가 들어있는 폴더 경로를 입력하면 됩니다.
+base_dir='/content/gdrive/My Drive/Data/'
+csv_list = os.listdir(root_dir)
+
+train_label = pd.read_csv(root_dir + 'train_label.csv')
+train_activity = pd.read_csv(root_dir + 'train_activity.csv')
+train_combat = pd.read_csv(root_dir + 'train_combat.csv')
+train_payment = pd.read_csv(root_dir + 'train_payment.csv')
+train_pledge = pd.read_csv(root_dir + 'train_pledge.csv')
+train_trade = pd.read_csv(root_dir + 'train_trade.csv')
+
+test1_activity = pd.read_csv(root_dir + 'test1_activity.csv')
+test1_combat = pd.read_csv(root_dir + 'test1_combat.csv')
+test1_payment = pd.read_csv(root_dir + 'test1_payment.csv')
+test1_pledge = pd.read_csv(root_dir + 'test1_pledge.csv')
+test1_trade = pd.read_csv(root_dir + 'test1_trade.csv')
+
+test2_activity = pd.read_csv(root_dir + 'test2_activity.csv')
+test2_combat = pd.read_csv(root_dir + 'test2_combat.csv')
+test2_payment = pd.read_csv(root_dir + 'test2_payment.csv')
+test2_pledge = pd.read_csv(root_dir + 'test2_pledge.csv')
+test2_trade = pd.read_csv(root_dir + 'test2_trade.csv')
+
+train_id_list = list(set(train_activity['acc_id']))
+train_id_list.sort()
+
+test1_id_list = list(set(test1_activity['acc_id']))
+test1_id_list.sort()
+
+test2_id_list = list(set(test2_activity['acc_id']))
+test2_id_list.sort()
+
+train_id_df=pd.DataFrame(train_id_list)
+train_id_df.columns=['acc_id']
+
+test1_id_df=pd.DataFrame(test1_id_list)
+test1_id_df.columns=['acc_id']
+
+test2_id_df=pd.DataFrame(test2_id_list)
+test2_id_df.columns=['acc_id']
+
+def score_function(predict_label, actual_label):
+    
+    predict = pd.read_csv(predict_label, engine='python') # 예측 답안 파일 불러오기
+    actual = pd.read_csv(actual_label,engine='python') # 실제 답안 파일 불러오기 
+
+    predict.acc_id = predict.acc_id.astype('int')
+    predict = predict.sort_values(by =['acc_id'], axis = 0) # 예측 답안을 acc_id 기준으로 정렬 
+    predict = predict.reset_index(drop = True)
+    actual.acc_id = actual.acc_id.astype('int')
+    actual = actual.sort_values(by =['acc_id'], axis = 0) # 실제 답안을 acc_id 기준으로 정렬
+    actual =actual.reset_index(drop=True)
+    
+    if predict.acc_id.equals(actual.acc_id) == False:
+        print('acc_id of predicted and actual label does not match')
+        sys.exit() # 예측 답안의 acc_id와 실제 답안의 acc_id가 다른 경우 에러처리 
+    else:
+            
+        S, alpha, L, sigma = 30, 0.01, 0.1, 15  
+        cost, gamma, add_rev = 0,0,0 
+        profit_result = []
+        survival_time_pred = list(predict.survival_time)
+        amount_spent_pred = list(predict.amount_spent)
+        survival_time_actual = list(actual.survival_time)
+        amount_spent_actual = list(actual.amount_spent)    
+        for i in range(len(survival_time_pred)):
+            if survival_time_pred[i] == 64 :                 
+                cost = 0
+                optimal_cost = 0
+            else:
+                cost = alpha * S * amount_spent_pred[i]                    #비용 계산
+                optimal_cost = alpha * S * amount_spent_actual[i]          #적정비용 계산 
+            
+            if optimal_cost == 0:
+                gamma = 0
+            elif cost / optimal_cost < L:
+                gamma = 0
+            elif cost / optimal_cost >= 1:
+                gamma = 1
+            else:
+                gamma = (cost)/((1-L)*optimal_cost) - L/(1-L)              #반응률 계산
+            
+            if survival_time_pred[i] == 64 or survival_time_actual[i] == 64:
+                T_k = 0
+            else:
+                T_k = S * np.exp(-((survival_time_pred[i] - survival_time_actual[i])**2)/(2*(sigma)**2))    #추가 생존기간 계산
+                
+            add_rev = T_k * amount_spent_actual[i]                         #잔존가치 계산
+    
+           
+            profit = gamma * add_rev - cost                                #유저별 기대이익 계산
+            profit_result.append(profit)
+            
+        score = sum(profit_result)                                         #기대이익 총합 계산
+        print(score)
+    return score
+
+# 데이터 다 합치기
+
+train_pledge_ = train_pledge.drop('char_id' , axis = 1)
+train_pledge_ = train_pledge_.drop('server' , axis = 1)
+train_pledge_ = train_pledge_.drop('pledge_id' , axis = 1)
+train_pledge_28 = train_pledge_.groupby(['acc_id']).agg({'play_char_cnt':'sum', 'combat_char_cnt':'sum', 'pledge_combat_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'same_pledge_cnt':'sum', 'temp_cnt':'sum', 'etc_cnt':'sum', 'combat_play_time':'sum', 'non_combat_play_time':'sum'}).reset_index()
+
+train_activity_ = train_activity.drop('server' , axis = 1)
+train_activity_ = train_activity_.drop('char_id' , axis = 1)
+train_activity_28 = train_activity_.groupby(['acc_id']).agg({'playtime':'sum', 'npc_kill':'sum', 'solo_exp':'sum', 'party_exp':'sum', 'quest_exp':'sum', 'boss_monster':'sum', 'death':'sum', 'revive':'sum', 'exp_recovery':'sum', 'fishing':'sum', 'private_shop':'sum', 'game_money_change':'sum', 'enchant_count':'sum'}).reset_index()
+
+train_payment_28 = train_payment.groupby(['acc_id']).agg({'amount_spent':'sum'}).reset_index()
+
+train_combat_ = train_combat.drop('char_id' , axis = 1)
+train_combat_ = train_combat_.drop('server' , axis = 1)
+train_combat_ = train_combat_.drop('class' , axis = 1)
+train_combat_ = train_combat_.drop('level' , axis = 1)
+train_combat_28 = train_combat_.groupby(['acc_id']).agg({'pledge_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'temp_cnt':'sum', 'same_pledge_cnt':'sum', 'etc_cnt':'sum', 'num_opponent':'sum'}).reset_index()
+
+train_28=pd.merge(train_id_df, train_activity_28, how='left')
+train_28=pd.merge(train_28, train_combat_28, how='left')
+train_28=pd.merge(train_28, train_pledge_28, how='left')
+train_28=pd.merge(train_28, train_payment_28, how='left')
+train_28=train_28.replace(np.nan, 0)
+train_28.to_csv(base_dir+'preprocess/train_28.csv')
+
+# 주간 데이터 합치기
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='train_pledge_'+week_i
+  train_pledge_ = train_pledge.drop('char_id' , axis = 1)
+  train_pledge_ = train_pledge_.drop('server' , axis = 1)
+  train_pledge_ = train_pledge_.drop('pledge_id' , axis = 1)
+  train_pledge_ = train_pledge_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'play_char_cnt':'sum', 'combat_char_cnt':'sum', 'pledge_combat_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'same_pledge_cnt':'sum', 'temp_cnt':'sum', 'etc_cnt':'sum', 'combat_play_time':'sum', 'non_combat_play_time':'sum'}).reset_index()
+  train_pledge_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='train_activity_'+week_i
+  train_activity_ = train_activity.drop('server' , axis = 1)
+  train_activity_ = train_activity_.drop('char_id' , axis = 1)
+  train_activity_ = train_activity_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'playtime':'sum', 'npc_kill':'sum', 'solo_exp':'sum', 'party_exp':'sum', 'quest_exp':'sum', 'boss_monster':'sum', 'death':'sum', 'revive':'sum', 'exp_recovery':'sum', 'fishing':'sum', 'private_shop':'sum', 'game_money_change':'sum', 'enchant_count':'sum'}).reset_index()
+  train_activity_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='train_payment_'+week_i
+  train_payment_ = train_payment[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'amount_spent':'sum'}).reset_index()
+  train_payment_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='train_combat_'+week_i
+  train_combat_ = train_combat.drop('char_id' , axis = 1)
+  train_combat_ = train_combat_.drop('server' , axis = 1)
+  train_combat_ = train_combat_.drop('class' , axis = 1)
+  train_combat_ = train_combat_.drop('level' , axis = 1)
+  train_combat_ = train_combat_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'pledge_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'temp_cnt':'sum', 'same_pledge_cnt':'sum', 'etc_cnt':'sum', 'num_opponent':'sum'}).reset_index()
+  train_combat_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  
+# 주간 데이터 합치기
+
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  train_activity_=pd.read_csv(base_dir+'preprocess/train_activity_'+week_i+'.csv', index_col=0)
+  train_combat_=pd.read_csv(base_dir+'preprocess/train_combat_'+week_i+'.csv', index_col=0)
+  train_pledge_=pd.read_csv(base_dir+'preprocess/train_pledge_'+week_i+'.csv', index_col=0)
+  train_payment_=pd.read_csv(base_dir+'preprocess/train_payment_'+week_i+'.csv', index_col=0)
+  train_week_i=pd.merge(train_id_df, train_activity_, how='left')
+  train_week_i=pd.merge(train_week_i, train_combat_, how='left')
+  train_week_i=pd.merge(train_week_i, train_pledge_, how='left')
+  train_week_i=pd.merge(train_week_i, train_payment_, how='left')
+  train_week_i=train_week_i.replace(np.nan, 0)
+  train_week_i.to_csv(base_dir+'preprocess/train_'+week_i+'.csv')
+
+# PCA할 데이터 가져오기
+
+user_sum = pd.read_csv(base_dir+'preprocess/train_28.csv', index_col=0)
+user_sum_=user_sum.drop(['acc_id'], axis=1)
+user_sum_.rename(columns={'amount_spent':'amount_spent_x'}, inplace=True)
+user_sum_.columns
+
+user_sum_ = user_sum_.values
+user_sum_scaled= minMaxScaler.fit_transform(user_sum_)
+user_sum_scaled=pd.DataFrame(user_sum_scaled)
+
+pca=PCA(n_components=4, svd_solver='full', tol=3, copy=True, whiten=True)
+pca.fit(user_sum_scaled)
+x_pca=pca.transform(user_sum_scaled)
+print(user_sum_scaled.shape)
+print(x_pca.shape)
+variance = pca.explained_variance_ratio_
+var=np.cumsum(np.round(pca.explained_variance_ratio_, decimals=3)*100)
+print(var)
+
+df_components=pd.DataFrame(pca.components_)
+df_components.columns=['playtime', 'npc_kill', 'solo_exp', 'party_exp', 'quest_exp',
+       'boss_monster', 'death', 'revive', 'exp_recovery', 'fishing',
+       'private_shop', 'game_money_change', 'enchant_count', 'pledge_cnt',
+       'random_attacker_cnt', 'random_defender_cnt', 'temp_cnt',
+       'same_pledge_cnt', 'etc_cnt', 'num_opponent', 'play_char_cnt',
+       'combat_char_cnt', 'pledge_combat_cnt', 'combat_play_time',
+       'non_combat_play_time', 'amount_spent_x']
+df_components=df_components.T
+
+pca_1=df_components[0].tolist()
+pca_2=df_components[1].tolist()
+pca_3=df_components[2].tolist()
+pca_4=df_components[3].tolist()
+
+df_values=df_components.values
+df_i=user_sum_scaled
+pca_df=pd.DataFrame(df_i.values@df_values)
+pca_df.columns=['PCA_1','PCA_2','PCA_3','PCA_4']
+pca_df.to_csv(base_dir+'preprocess/train_pca_28_data.csv')
+pd.DataFrame(pca.components_.T)
+
+# 주간데이터 PCA
+
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  path =base_dir+'preprocess/train_'+week_i+'.csv'
+  df_week=pd.read_csv(path, index_col=0)
+  df_week=df_week.drop('acc_id', axis=1)
+  df_week=df_week.values
+  df_week_scaled = minMaxScaler.fit_transform(df_week)
+  df_week_scaled=pd.DataFrame(df_week_scaled)
+  df_week_scaled.columns=['playtime', 'npc_kill', 'solo_exp', 'party_exp', 'quest_exp',
+         'boss_monster', 'death', 'revive', 'exp_recovery', 'fishing',
+         'private_shop', 'game_money_change', 'enchant_count', 'pledge_cnt',
+         'random_attacker_cnt', 'random_defender_cnt', 'temp_cnt',
+         'same_pledge_cnt', 'etc_cnt', 'num_opponent', 'play_char_cnt',
+         'combat_char_cnt', 'pledge_combat_cnt', 'combat_play_time',
+         'non_combat_play_time', 'amount_spent_x']
+    
+  df_i=df_week_scaled
+  pca_week=pd.DataFrame(df_i.values@df_values)
+  pca_week.columns=['PCA_1','PCA_2','PCA_3','PCA_4']
+  pca_week.to_csv(base_dir+'preprocess/train_pca_'+week_i+'.csv')
+  
+df_1=pd.read_csv(base_dir+'preprocess/train_pca_week1.csv', index_col=0)
+df_2=pd.read_csv(base_dir+'preprocess/train_pca_week2.csv', index_col=0)
+df_3=pd.read_csv(base_dir+'preprocess/train_pca_week3.csv', index_col=0)
+df_4=pd.read_csv(base_dir+'preprocess/train_pca_week4.csv', index_col=0)
+
+# 주간데이터 새로운 데이터 저장
+
+frame = pd.DataFrame()
+for i in range(0,40000):
+  list_ = []
+  frame_ = pd.DataFrame()
+  for l in range(1,5):
+    if l == 1:
+      df_ = df_1
+    elif l == 2:
+      df_ = df_2
+    elif l == 3:
+      df_ = df_3
+    else:
+      df_ = df_4
+    row_=df_.iloc[i]
+    row_=pd.DataFrame(row_)
+    row_=np.transpose(row_)
+    list_.append(row_)
+  frame_=pd.concat(list_)
+  frame=pd.concat([frame,frame_])
+frame.to_csv(base_dir+'preprocess/train_pca_RNN.csv')
+
+# 데이터 다 합치기
+
+test1_pledge_ = test1_pledge.drop('char_id' , axis = 1)
+test1_pledge_ = test1_pledge_.drop('server' , axis = 1)
+test1_pledge_ = test1_pledge_.drop('pledge_id' , axis = 1)
+test1_pledge_28 = test1_pledge_.groupby(['acc_id']).agg({'play_char_cnt':'sum', 'combat_char_cnt':'sum', 'pledge_combat_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'same_pledge_cnt':'sum', 'temp_cnt':'sum', 'etc_cnt':'sum', 'combat_play_time':'sum', 'non_combat_play_time':'sum'}).reset_index()
+
+test1_activity_ = test1_activity.drop('server' , axis = 1)
+test1_activity_ = test1_activity_.drop('char_id' , axis = 1)
+test1_activity_28 = test1_activity_.groupby(['acc_id']).agg({'playtime':'sum', 'npc_kill':'sum', 'solo_exp':'sum', 'party_exp':'sum', 'quest_exp':'sum', 'boss_monster':'sum', 'death':'sum', 'revive':'sum', 'exp_recovery':'sum', 'fishing':'sum', 'private_shop':'sum', 'game_money_change':'sum', 'enchant_count':'sum'}).reset_index()
+
+test1_payment_28 = test1_payment.groupby(['acc_id']).agg({'amount_spent':'sum'}).reset_index()
+
+test1_combat_ = test1_combat.drop('char_id' , axis = 1)
+test1_combat_ = test1_combat_.drop('server' , axis = 1)
+test1_combat_ = test1_combat_.drop('class' , axis = 1)
+test1_combat_ = test1_combat_.drop('level' , axis = 1)
+test1_combat_28 = test1_combat_.groupby(['acc_id']).agg({'pledge_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'temp_cnt':'sum', 'same_pledge_cnt':'sum', 'etc_cnt':'sum', 'num_opponent':'sum'}).reset_index()
+
+test1_28=pd.merge(test1_id_df, test1_activity_28, how='left')
+test1_28=pd.merge(test1_28, test1_combat_28, how='left')
+test1_28=pd.merge(test1_28, test1_pledge_28, how='left')
+test1_28=pd.merge(test1_28, test1_payment_28, how='left')
+test1_28=test1_28.replace(np.nan, 0)
+test1_28.to_csv(base_dir+'preprocess/test1_28.csv')
+
+# 주간 데이터 합치기
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test1_pledge_'+week_i
+  test1_pledge_ = test1_pledge.drop('char_id' , axis = 1)
+  test1_pledge_ = test1_pledge_.drop('server' , axis = 1)
+  test1_pledge_ = test1_pledge_.drop('pledge_id' , axis = 1)
+  test1_pledge_ = test1_pledge_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'play_char_cnt':'sum', 'combat_char_cnt':'sum', 'pledge_combat_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'same_pledge_cnt':'sum', 'temp_cnt':'sum', 'etc_cnt':'sum', 'combat_play_time':'sum', 'non_combat_play_time':'sum'}).reset_index()
+  test1_pledge_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test1_pledge_))
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test1_activity_'+week_i
+  test1_activity_ = test1_activity.drop('server' , axis = 1)
+  test1_activity_ = test1_activity_.drop('char_id' , axis = 1)
+  test1_activity_ = test1_activity_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'playtime':'sum', 'npc_kill':'sum', 'solo_exp':'sum', 'party_exp':'sum', 'quest_exp':'sum', 'boss_monster':'sum', 'death':'sum', 'revive':'sum', 'exp_recovery':'sum', 'fishing':'sum', 'private_shop':'sum', 'game_money_change':'sum', 'enchant_count':'sum'}).reset_index()
+  test1_activity_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test1_activity_))
+
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test1_payment_'+week_i
+  test1_payment_ = test1_payment[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'amount_spent':'sum'}).reset_index()
+  test1_payment_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test1_payment_))
+
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test1_combat_'+week_i
+  test1_combat_ = test1_combat.drop('char_id' , axis = 1)
+  test1_combat_ = test1_combat_.drop('server' , axis = 1)
+  test1_combat_ = test1_combat_.drop('class' , axis = 1)
+  test1_combat_ = test1_combat_.drop('level' , axis = 1)
+  test1_combat_ = test1_combat_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'pledge_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'temp_cnt':'sum', 'same_pledge_cnt':'sum', 'etc_cnt':'sum', 'num_opponent':'sum'}).reset_index()
+  test1_combat_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test1_combat_))
+
+# 주간 데이터 합치기
+
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  test1_activity_=pd.read_csv(base_dir+'preprocess/test1_activity_'+week_i+'.csv', index_col=0)
+  test1_combat_=pd.read_csv(base_dir+'preprocess/test1_combat_'+week_i+'.csv', index_col=0)
+  test1_pledge_=pd.read_csv(base_dir+'preprocess/test1_pledge_'+week_i+'.csv', index_col=0)
+  test1_payment_=pd.read_csv(base_dir+'preprocess/test1_payment_'+week_i+'.csv', index_col=0)
+  test1_week_i=pd.merge(test1_id_df, test1_activity_, how='left')
+  test1_week_i=pd.merge(test1_week_i, test1_combat_, how='left')
+  test1_week_i=pd.merge(test1_week_i, test1_pledge_, how='left')
+  test1_week_i=pd.merge(test1_week_i, test1_payment_, how='left')
+  test1_week_i=test1_week_i.replace(np.nan, 0)
+  test1_week_i.to_csv(base_dir+'preprocess/test1_'+week_i+'.csv')
+
+# PCA할 데이터 가져오기
+
+user_sum = pd.read_csv(base_dir+'preprocess/test1_28.csv', index_col=0)
+user_sum_=user_sum.drop(['acc_id'], axis=1)
+user_sum_.rename(columns={'amount_spent':'amount_spent_x'}, inplace=True)
+user_sum_.columns
+
+user_sum_ = user_sum_.values
+user_sum_scaled= minMaxScaler.fit_transform(user_sum_)
+user_sum_scaled=pd.DataFrame(user_sum_scaled)
+
+pca=PCA(n_components=4, svd_solver='full', tol=3, copy=True, whiten=True)
+pca.fit(user_sum_scaled)
+x_pca=pca.transform(user_sum_scaled)
+print(user_sum_scaled.shape)
+print(x_pca.shape)
+variance = pca.explained_variance_ratio_
+var=np.cumsum(np.round(pca.explained_variance_ratio_, decimals=3)*100)
+print(var)
+
+df_components=pd.DataFrame(pca.components_)
+df_components.columns=['playtime', 'npc_kill', 'solo_exp', 'party_exp', 'quest_exp',
+       'boss_monster', 'death', 'revive', 'exp_recovery', 'fishing',
+       'private_shop', 'game_money_change', 'enchant_count', 'pledge_cnt',
+       'random_attacker_cnt', 'random_defender_cnt', 'temp_cnt',
+       'same_pledge_cnt', 'etc_cnt', 'num_opponent', 'play_char_cnt',
+       'combat_char_cnt', 'pledge_combat_cnt', 'combat_play_time',
+       'non_combat_play_time', 'amount_spent_x']
+df_components=df_components.T
+
+pca_1=df_components[0].tolist()
+pca_2=df_components[1].tolist()
+pca_3=df_components[2].tolist()
+pca_3=df_components[3].tolist()
+
+df_values=df_components.values
+df_i=user_sum_scaled
+pca_df=pd.DataFrame(df_i.values@df_values)
+pca_df.columns=['PCA_1','PCA_2','PCA_3','PCA_4']
+pca_df.to_csv(base_dir+'preprocess/test1_pca_28_data.csv')
+
+# 주간데이터 PCA
+
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  path =base_dir+'preprocess/test1_'+week_i+'.csv'
+  df_week=pd.read_csv(path, index_col=0)
+  df_week=df_week.drop('acc_id', axis=1)
+  df_week=df_week.values
+  df_week_scaled = minMaxScaler.fit_transform(df_week)
+  df_week_scaled=pd.DataFrame(df_week_scaled)
+  df_week_scaled.columns=['playtime', 'npc_kill', 'solo_exp', 'party_exp', 'quest_exp',
+         'boss_monster', 'death', 'revive', 'exp_recovery', 'fishing',
+         'private_shop', 'game_money_change', 'enchant_count', 'pledge_cnt',
+         'random_attacker_cnt', 'random_defender_cnt', 'temp_cnt',
+         'same_pledge_cnt', 'etc_cnt', 'num_opponent', 'play_char_cnt',
+         'combat_char_cnt', 'pledge_combat_cnt', 'combat_play_time',
+         'non_combat_play_time', 'amount_spent_x']
+    
+  df_i=df_week_scaled
+  pca_week=pd.DataFrame(df_i.values@df_values)
+  pca_week.columns=['PCA_1','PCA_2','PCA_3','PCA_4']
+  pca_week.to_csv(base_dir+'preprocess/test1_pca_'+week_i+'.csv')
+  
+df_1=pd.read_csv(base_dir+'preprocess/test1_pca_week1.csv', index_col=0)
+df_2=pd.read_csv(base_dir+'preprocess/test1_pca_week2.csv', index_col=0)
+df_3=pd.read_csv(base_dir+'preprocess/test1_pca_week3.csv', index_col=0)
+df_4=pd.read_csv(base_dir+'preprocess/test1_pca_week4.csv', index_col=0)
+
+# 주간데이터 새로운 데이터 저장
+
+frame = pd.DataFrame()
+for i in range(0,20000):
+  list_ = []
+  frame_ = pd.DataFrame()
+  for l in range(1,5):
+    if l == 1:
+      df_ = df_1
+    elif l == 2:
+      df_ = df_2
+    elif l == 3:
+      df_ = df_3
+    else:
+      df_ = df_4
+    row_=df_.iloc[i]
+    row_=pd.DataFrame(row_)
+    row_=np.transpose(row_)
+    list_.append(row_)
+  frame_=pd.concat(list_)
+  frame=pd.concat([frame,frame_])
+frame.to_csv(base_dir+'preprocess/test1_pca_RNN.csv')
+
+# 데이터 다 합치기
+
+test2_pledge_ = test2_pledge.drop('char_id' , axis = 1)
+test2_pledge_ = test2_pledge_.drop('server' , axis = 1)
+test2_pledge_ = test2_pledge_.drop('pledge_id' , axis = 1)
+test2_pledge_28 = test2_pledge_.groupby(['acc_id']).agg({'play_char_cnt':'sum', 'combat_char_cnt':'sum', 'pledge_combat_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'same_pledge_cnt':'sum', 'temp_cnt':'sum', 'etc_cnt':'sum', 'combat_play_time':'sum', 'non_combat_play_time':'sum'}).reset_index()
+
+test2_activity_ = test2_activity.drop('server' , axis = 1)
+test2_activity_ = test2_activity_.drop('char_id' , axis = 1)
+test2_activity_28 = test2_activity_.groupby(['acc_id']).agg({'playtime':'sum', 'npc_kill':'sum', 'solo_exp':'sum', 'party_exp':'sum', 'quest_exp':'sum', 'boss_monster':'sum', 'death':'sum', 'revive':'sum', 'exp_recovery':'sum', 'fishing':'sum', 'private_shop':'sum', 'game_money_change':'sum', 'enchant_count':'sum'}).reset_index()
+
+test2_payment_28 = test2_payment.groupby(['acc_id']).agg({'amount_spent':'sum'}).reset_index()
+
+test2_combat_ = test2_combat.drop('char_id' , axis = 1)
+test2_combat_ = test2_combat_.drop('server' , axis = 1)
+test2_combat_ = test2_combat_.drop('class' , axis = 1)
+test2_combat_ = test2_combat_.drop('level' , axis = 1)
+test2_combat_28 = test2_combat_.groupby(['acc_id']).agg({'pledge_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'temp_cnt':'sum', 'same_pledge_cnt':'sum', 'etc_cnt':'sum', 'num_opponent':'sum'}).reset_index()
+
+test2_28=pd.merge(test2_id_df, test2_activity_28, how='left')
+test2_28=pd.merge(test2_28, test2_combat_28, how='left')
+test2_28=pd.merge(test2_28, test2_pledge_28, how='left')
+test2_28=pd.merge(test2_28, test2_payment_28, how='left')
+test2_28=test2_28.replace(np.nan, 0)
+test2_28.to_csv(base_dir+'preprocess/test2_28.csv')
+
+# 주간 데이터 합치기
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test2_pledge_'+week_i
+  test2_pledge_ = test2_pledge.drop('char_id' , axis = 1)
+  test2_pledge_ = test2_pledge_.drop('server' , axis = 1)
+  test2_pledge_ = test2_pledge_.drop('pledge_id' , axis = 1)
+  test2_pledge_ = test2_pledge_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'play_char_cnt':'sum', 'combat_char_cnt':'sum', 'pledge_combat_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'same_pledge_cnt':'sum', 'temp_cnt':'sum', 'etc_cnt':'sum', 'combat_play_time':'sum', 'non_combat_play_time':'sum'}).reset_index()
+  test2_pledge_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test2_pledge_))
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test2_activity_'+week_i
+  test2_activity_ = test2_activity.drop('server' , axis = 1)
+  test2_activity_ = test2_activity_.drop('char_id' , axis = 1)
+  test2_activity_ = test2_activity_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'playtime':'sum', 'npc_kill':'sum', 'solo_exp':'sum', 'party_exp':'sum', 'quest_exp':'sum', 'boss_monster':'sum', 'death':'sum', 'revive':'sum', 'exp_recovery':'sum', 'fishing':'sum', 'private_shop':'sum', 'game_money_change':'sum', 'enchant_count':'sum'}).reset_index()
+  test2_activity_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test2_activity_))
+
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test2_payment_'+week_i
+  test2_payment_ = test2_payment[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'amount_spent':'sum'}).reset_index()
+  test2_payment_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test2_payment_))
+
+  
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  name='test2_combat_'+week_i
+  test2_combat_ = test2_combat.drop('char_id' , axis = 1)
+  test2_combat_ = test2_combat_.drop('server' , axis = 1)
+  test2_combat_ = test2_combat_.drop('class' , axis = 1)
+  test2_combat_ = test2_combat_.drop('level' , axis = 1)
+  test2_combat_ = test2_combat_[lambda x: x['day']>=i*7-6][lambda x: x['day']<=i*7].groupby(['acc_id']).agg({'pledge_cnt':'sum', 'random_attacker_cnt':'sum', 'random_defender_cnt':'sum', 'temp_cnt':'sum', 'same_pledge_cnt':'sum', 'etc_cnt':'sum', 'num_opponent':'sum'}).reset_index()
+  test2_combat_.to_csv(base_dir+'preprocess/'+name+'.csv')
+  print(len(test2_combat_))
+
+# 주간 데이터 합치기
+
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  test2_activity_=pd.read_csv(base_dir+'preprocess/test2_activity_'+week_i+'.csv', index_col=0)
+  test2_combat_=pd.read_csv(base_dir+'preprocess/test2_combat_'+week_i+'.csv', index_col=0)
+  test2_pledge_=pd.read_csv(base_dir+'preprocess/test2_pledge_'+week_i+'.csv', index_col=0)
+  test2_payment_=pd.read_csv(base_dir+'preprocess/test2_payment_'+week_i+'.csv', index_col=0)
+  test2_week_i=pd.merge(test2_id_df, test2_activity_, how='left')
+  test2_week_i=pd.merge(test2_week_i, test2_combat_, how='left')
+  test2_week_i=pd.merge(test2_week_i, test2_pledge_, how='left')
+  test2_week_i=pd.merge(test2_week_i, test2_payment_, how='left')
+  test2_week_i=test2_week_i.replace(np.nan, 0)
+  test2_week_i.to_csv(base_dir+'preprocess/test2_'+week_i+'.csv')
+
+# PCA할 데이터 가져오기
+
+user_sum = pd.read_csv(base_dir+'preprocess/test2_28.csv', index_col=0)
+user_sum_=user_sum.drop(['acc_id'], axis=1)
+user_sum_.rename(columns={'amount_spent':'amount_spent_x'}, inplace=True)
+user_sum_.columns
+
+user_sum_ = user_sum_.values
+user_sum_scaled= minMaxScaler.fit_transform(user_sum_)
+user_sum_scaled=pd.DataFrame(user_sum_scaled)
+
+pca=PCA(n_components=4, svd_solver='full', tol=3, copy=True, whiten=True)
+pca.fit(user_sum_scaled)
+x_pca=pca.transform(user_sum_scaled)
+print(user_sum_scaled.shape)
+print(x_pca.shape)
+variance = pca.explained_variance_ratio_
+var=np.cumsum(np.round(pca.explained_variance_ratio_, decimals=3)*100)
+print(var)
+
+df_components=pd.DataFrame(pca.components_)
+df_components.columns=['playtime', 'npc_kill', 'solo_exp', 'party_exp', 'quest_exp',
+       'boss_monster', 'death', 'revive', 'exp_recovery', 'fishing',
+       'private_shop', 'game_money_change', 'enchant_count', 'pledge_cnt',
+       'random_attacker_cnt', 'random_defender_cnt', 'temp_cnt',
+       'same_pledge_cnt', 'etc_cnt', 'num_opponent', 'play_char_cnt',
+       'combat_char_cnt', 'pledge_combat_cnt', 'combat_play_time',
+       'non_combat_play_time', 'amount_spent_x']
+df_components=df_components.T
+
+pca_1=df_components[0].tolist()
+pca_2=df_components[1].tolist()
+pca_3=df_components[2].tolist()
+pca_3=df_components[3].tolist()
+
+df_values=df_components.values
+df_i=user_sum_scaled
+pca_df=pd.DataFrame(df_i.values@df_values)
+pca_df.columns=['PCA_1','PCA_2','PCA_3','PCA_4']
+pca_df.to_csv(base_dir+'preprocess/test2_pca_28_data.csv')
+
+# 주간데이터 PCA
+
+for i in range(1,5):
+  week_i='week{}'.format(i)
+  path =base_dir+'preprocess/test2_'+week_i+'.csv'
+  df_week=pd.read_csv(path, index_col=0)
+  df_week=df_week.drop('acc_id', axis=1)
+  df_week=df_week.values
+  df_week_scaled = minMaxScaler.fit_transform(df_week)
+  df_week_scaled=pd.DataFrame(df_week_scaled)
+  df_week_scaled.columns=['playtime', 'npc_kill', 'solo_exp', 'party_exp', 'quest_exp',
+         'boss_monster', 'death', 'revive', 'exp_recovery', 'fishing',
+         'private_shop', 'game_money_change', 'enchant_count', 'pledge_cnt',
+         'random_attacker_cnt', 'random_defender_cnt', 'temp_cnt',
+         'same_pledge_cnt', 'etc_cnt', 'num_opponent', 'play_char_cnt',
+         'combat_char_cnt', 'pledge_combat_cnt', 'combat_play_time',
+         'non_combat_play_time', 'amount_spent_x']
+    
+  df_i=df_week_scaled
+  pca_week=pd.DataFrame(df_i.values@df_values)
+  pca_week.columns=['PCA_1','PCA_2','PCA_3','PCA_4']
+  pca_week.to_csv(base_dir+'preprocess/test2_pca_'+week_i+'.csv')
+  
+df_1=pd.read_csv(base_dir+'preprocess/test2_pca_week1.csv', index_col=0)
+df_2=pd.read_csv(base_dir+'preprocess/test2_pca_week2.csv', index_col=0)
+df_3=pd.read_csv(base_dir+'preprocess/test2_pca_week3.csv', index_col=0)
+df_4=pd.read_csv(base_dir+'preprocess/test2_pca_week4.csv', index_col=0)
+
+# 주간데이터 새로운 데이터 저장
+
+frame = pd.DataFrame()
+for i in range(0,20000):
+  list_ = []
+  frame_ = pd.DataFrame()
+  for l in range(1,5):
+    if l == 1:
+      df_ = df_1
+    elif l == 2:
+      df_ = df_2
+    elif l == 3:
+      df_ = df_3
+    else:
+      df_ = df_4
+    row_=df_.iloc[i]
+    row_=pd.DataFrame(row_)
+    row_=np.transpose(row_)
+    list_.append(row_)
+  frame_=pd.concat(list_)
+  frame=pd.concat([frame,frame_])
+frame.to_csv(base_dir+'preprocess/test2_pca_RNN.csv')

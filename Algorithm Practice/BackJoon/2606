@@ -1,0 +1,23 @@
+N=int(input())
+M=int(input())
+L=[]
+for i in range(M):
+    temp=input().split(' ')
+    temp.sort()
+    L.append(temp)
+
+L.sort()
+
+current_list=['1']
+already_list=[]
+while current_list:
+    current=current_list.pop(0)
+    already_list.append(current)
+    for i in L:
+        if current in i:
+            if i[0] not in already_list:
+                current_list.append(i[0])
+            if i[1] not in already_list:
+                current_list.append(i[1])
+    
+print(len(set(already_list))-1)

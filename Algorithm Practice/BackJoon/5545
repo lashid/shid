@@ -1,0 +1,19 @@
+N=int(input())
+temp_list=input().split(' ')
+A=float(temp_list[0])
+B=float(temp_list[1])
+C=float(input())
+temp_list=[]
+for i in range(N):
+    temp_list.append(float(input()))
+nume=C
+deno=A
+temp_list.sort()
+for i in range(N):
+    temp=temp_list.pop()
+    if (temp/B)>(nume/deno):
+        nume+=temp
+        deno+=B
+
+answer=int(nume/deno)
+print(answer)

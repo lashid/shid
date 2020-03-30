@@ -1,0 +1,39 @@
+text_data=str(input())
+
+from konlpy.tag import Okt
+from collections import Counter
+text_data=open('text_data.txt', 'r',-1,"utf-8").read()
+
+def get_tags(text, ntags=100):
+    spliter=Okt()
+    nouns=spliter.nouns(text)
+    count=Counter(nouns)
+    return_list=[]
+    for n,c in count.most_common(ntags):
+        temp={'tag':n,'count':c}
+        return_list.append(temp)
+    return return_list
+
+def main():
+    global text_data
+    noun_count=500
+    open_text_file=text_data
+    tags=get_tags(text_data,noun_count)
+    open_output_file = open("text.txt", 'w',-1,"utf-8")
+    for tag in tags:
+        noun = tag['tag']
+        count = tag['count']
+        open_output_file.write("'{} {}\n".format(noun, count))
+    open_output_file.close()
+
+if __name__ == '__main__':
+    main()
+    
+from PIL import Image
+from wordcloud import WordCloud
+
+import numpy as np
+
+text=open('text.txt', 'r',-1,"utf-8").read()
+wc = WordCloud(font_path='NanumBarunGothic.ttf',background_color="white", colormap='Greys',max_font_size=60).generate(text)
+wc.to_file('wordcloud.png')

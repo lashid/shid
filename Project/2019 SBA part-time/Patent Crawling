@@ -1,0 +1,170 @@
+import os
+import time
+import xlrd
+import requests
+import pandas as pd
+import re
+from bs4 import BeautifulSoup as bs
+
+from xlutils.copy import copy
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException
+
+driver = webdriver.Chrome('C:/★/★방학/untitled/chromedriver.exe')
+driver.implicitly_wait(20)
+driver.get("http://www.kipris.or.kr/khome/main.jsp")
+
+df_patent=pd.read_csv('C:/★/★방학/untitled/onemore.csv', index_col=0)
+id_list=df_patent[lambda x: x['출원번호']=='']['원 출원번호'].tolist()
+number_list=df_patent[lambda x: x['country_application']=='대한민국']['id_application'].tolist()
+
+df_=pd.DataFrame(columns=['출원번호','링크','출원명(국문)','출원명(영문)','Int. CL(1)','Int. CL(2)','Int. CL(3)','Int. CL(4)','Int. CL(5)','출원일자','출원인1','출원인2','출원인3','등록번호','등록일자','공개번호','공개일자','공고번호','공고일자','법적상태','심사진행상태','구분'])
+
+for i in range(len(id_list)):
+    try:
+        driver.get("http://www.kipris.or.kr/khome/main.jsp")
+        elem=driver.find_element_by_id('inputQueryText')
+        search=re.sub('[=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]', '', id_list[i])
+        elem.send_keys(search)
+        elem.submit()
+        purpose=driver.find_element_by_xpath("//*[@id='patentResultList']/article[1]/div[1]/h1/a[2]")
+        purpose.click()
+        driver.switch_to.window(driver.window_handles[-1])
+        name=driver.find_element_by_xpath("//*[@id='divBiblioTop']/h1")
+        name=name.text
+        name=name.split('\n')
+        driver.switch_to.frame("ifrmDetailArea")
+        data=driver.find_element_by_xpath('//*[@id="divBiblioContent"]/div[1]/ul')
+        text=data.text
+        result=text.split('(51) Int. CL ')
+        result.pop(0)
+        result.extend(result[0].split('(52) CPC'))
+        result.pop(0)
+        result.extend(result[1].split('(21) 출원번호/일자'))
+        result.pop(1)
+        result.extend(result[2].split('(71) 출원인'))
+        result.pop(2)
+        result.extend(result[3].split('(11) 등록번호/일자'))
+        result.pop(3)
+        result.extend(result[4].split('(65) 공개번호/일자'))
+        result.pop(4)
+        result.extend(result[5].split('(11) 공고번호/일자'))
+        result.pop(5)
+        result.extend(result[6].split('(86) 국제출원번호/일자'))
+        result.pop(6)
+        result.extend(result[7].split('(87) 국제공개번호/일자'))
+        result.pop(7)
+        result.extend(result[8].split('(30) 우선권정보'))
+        result.pop(8)
+        result.extend(result[9].split('법적상태'))
+        result.pop(9)
+        result.extend(result[10].split('심사진행상태'))
+        result.pop(10)
+        result.extend(result[11].split('심판사항'))
+        result.pop(11)
+        result.extend(result[12].split('구분'))
+        result.pop(12)
+        result.extend(result[13].split('원출원번호/일자'))
+        result.pop(13)
+        for CL in range(len(result[0].split(') '))):
+            temp_='Int. CL('+str(int(CL)+1)+')'
+            if CL==len(result[0].split(') '))-1:
+                df_.loc[i,temp_]=result[0].split(') ')[CL][:-1]
+            else:
+                df_.loc[i,temp_]=result[0].split(') ')[CL]+')'
+        df_.loc[i,'출원번호']=result[2].split(' (')[0]
+        df_.loc[i,'출원명(국문)']=name[0]
+        df_.loc[i,'출원명(영문)']=name[1]
+        df_.loc[i,'출원일자']=result[2][-12:-2]
+        for CL in range(len(result[3].split('\n'))):
+            temp_='출원인'+str(int(CL)+1)
+            df_.loc[i,temp_]=result[3].split('\n')[CL]
+        df_.loc[i,'등록번호']=result[4].split(' (')[0]
+        df_.loc[i,'등록일자']=result[4][-12:-2]
+        df_.loc[i,'공개번호']=result[5].split(' (')[0]
+        df_.loc[i,'공개일자']=result[5][-12:-2]
+        df_.loc[i,'공고번호']=result[6].split(' (')[0]
+        df_.loc[i,'공고일자']=result[6][-12:-2]
+        df_.loc[i,'법적상태']=result[10][:-1]
+        df_.loc[i,'심사진행상태']=result[11][:-1]
+        df_.loc[i,'구분']=result[13][:-1]
+        print(result)
+        print(i)
+        if str(search)[:3] != str(name[0])[:3]:
+            df_.loc[i] = ''
+            driver.get("http://www.kipris.or.kr/khome/main.jsp")
+            elem = driver.find_element_by_id('inputQueryText')
+            search = re.sub('[=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]', '', number_list[i])
+            elem.send_keys(search)
+            elem.submit()
+            purpose = driver.find_element_by_xpath("//*[@id='patentResultList']/article[1]/div[1]/h1/a[2]")
+            purpose.click()
+            driver.switch_to.window(driver.window_handles[-1])
+            name = driver.find_element_by_xpath("//*[@id='divBiblioTop']/h1")
+            name = name.text
+            name = name.split('\n')
+            driver.switch_to.frame("ifrmDetailArea")
+            data = driver.find_element_by_xpath('//*[@id="divBiblioContent"]/div[1]/ul')
+            text = data.text
+            result = text.split('(51) Int. CL ')
+            result.pop(0)
+            result.extend(result[0].split('(52) CPC'))
+            result.pop(0)
+            result.extend(result[1].split('(21) 출원번호/일자'))
+            result.pop(1)
+            result.extend(result[2].split('(71) 출원인'))
+            result.pop(2)
+            result.extend(result[3].split('(11) 등록번호/일자'))
+            result.pop(3)
+            result.extend(result[4].split('(65) 공개번호/일자'))
+            result.pop(4)
+            result.extend(result[5].split('(11) 공고번호/일자'))
+            result.pop(5)
+            result.extend(result[6].split('(86) 국제출원번호/일자'))
+            result.pop(6)
+            result.extend(result[7].split('(87) 국제공개번호/일자'))
+            result.pop(7)
+            result.extend(result[8].split('(30) 우선권정보'))
+            result.pop(8)
+            result.extend(result[9].split('법적상태'))
+            result.pop(9)
+            result.extend(result[10].split('심사진행상태'))
+            result.pop(10)
+            result.extend(result[11].split('심판사항'))
+            result.pop(11)
+            result.extend(result[12].split('구분'))
+            result.pop(12)
+            result.extend(result[13].split('원출원번호/일자'))
+            result.pop(13)
+            for CL in range(len(result[0].split(') '))):
+                temp_ = 'Int. CL(' + str(int(CL) + 1) + ')'
+                if CL == len(result[0].split(') ')) - 1:
+                    df_.loc[i, temp_] = result[0].split(') ')[CL][:-1]
+                else:
+                    df_.loc[i, temp_] = result[0].split(') ')[CL] + ')'
+            df_.loc[i, '출원번호'] = result[2].split(' (')[0]
+            df_.loc[i, '출원명(국문)'] = name[0]
+            df_.loc[i, '출원명(영문)'] = name[1]
+            df_.loc[i, '출원일자'] = result[2][-12:-2]
+            for CL in range(len(result[3].split('\n'))):
+                temp_ = '출원인' + str(int(CL) + 1)
+                df_.loc[i, temp_] = result[3].split('\n')[CL]
+            df_.loc[i, '등록번호'] = result[4].split(' (')[0]
+            df_.loc[i, '등록일자'] = result[4][-12:-2]
+            df_.loc[i, '공개번호'] = result[5].split(' (')[0]
+            df_.loc[i, '공개일자'] = result[5][-12:-2]
+            df_.loc[i, '공고번호'] = result[6].split(' (')[0]
+            df_.loc[i, '공고일자'] = result[6][-12:-2]
+            df_.loc[i, '법적상태'] = result[10][:-1]
+            df_.loc[i, '심사진행상태'] = result[11][:-1]
+            df_.loc[i, '구분'] = result[13][:-1]
+            print(result)
+            print(i)
+            continue
+    except:
+        df_.loc[i]=''
+        continue
+    df_.to_csv('C:/★/★방학/untitled/result.csv')

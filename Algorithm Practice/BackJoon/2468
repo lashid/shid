@@ -1,0 +1,25 @@
+import sys
+sys.setrecursionlimit(100000)
+length_data=int(sys.stdin.readline())
+data=[[int(x) for x in sys.stdin.readline().rstrip().split()] for i in range(length_data)]
+max_number=max([max(data[i]) for i in range(len(data))])
+
+def solution(r,c,h):
+    global already
+    already[r][c]=True
+    for dr,dc in (0,1),(0,-1),(1,0),(-1,0):
+        a,b=r+dr,c+dc
+        if (0<=a<length_data) and (0<=b<length_data) and not already[a][b] and data[a][b]>h:
+            solution(a,b,h)
+    return None
+answer=1
+for i in range(1, max_number):
+    count=0
+    already = [[False] * length_data for i in range(length_data)]
+    for r in range(length_data):
+        for c in range(length_data):
+            if already[r][c]==False and data[r][c]>i:
+                solution(r,c,i)
+                count+=1
+    answer=max(answer,count)
+print(answer)

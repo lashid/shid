@@ -1,0 +1,17 @@
+#필요한 동전의 최소 개수 찾기
+
+n=list(map(int, input().split()))
+L=list()
+number=n[0]
+price=n[1]
+for i in range(0, number):
+    L.append(int(input()))
+
+
+L.sort(reverse=True)
+M=list()
+for i in L:
+    M.append(price//i)
+    price=price%i
+
+print(sum(M))

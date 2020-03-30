@@ -1,0 +1,20 @@
+#중요도 기반 프린트 순서 찾기
+
+def solution(priorities, location):
+    pri_index=[x for x in range(len(priorities))]
+    already=[]
+    while priorities!=[]:
+        current=priorities.pop(0)
+        current_index=pri_index.pop(0)
+        if priorities!=[]:
+            if current>=max(priorities):
+                already.append([current, current_index])
+            else:
+                priorities.append(current)
+                pri_index.append(current_index)
+        else:
+            already.append([current, current_index])
+    for i in already:
+        if i[1]==location:
+            answer=already.index(i)+1
+    return answer
