@@ -1,6 +1,6 @@
 # Oh Jinha
 
-# about Python
+# From Back-End ~ Data Analysis
+# Mostly Python (Feat. SAS, SQL...)
 
-# Data Analysis (2019.03.~)
-# Algorithm (2019.09.~)
+# Please READ my Portfolio!
