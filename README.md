@@ -1,3 +1,4 @@
+#
 # Oh Jinha
 # 
 
@@ -5,4 +6,4 @@
 # ⊙ Mostly Python (Feat. SAS, SQL...)
 
 # 
-# Please READ my Portfolio!
+# "Please READ my Portfolio!"
