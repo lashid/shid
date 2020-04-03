@@ -1,0 +1,18 @@
+def solution(n, computers):
+    check=[False for temp in range(n)]
+    answer=0
+    for computer in range(n):
+        candidate=[]
+        if check[computer]==False:
+            check[computer]=True
+            for node in range(n):
+                if check[node]==False and computers[computer][node]==1:
+                    candidate.append(node)
+            while candidate:
+                current=candidate.pop(0)
+                check[current]=True
+                for node in range(n):
+                    if check[node]==False and computers[current][node]==1:
+                        candidate.append(node)
+            answer+=1    
+    return answer
