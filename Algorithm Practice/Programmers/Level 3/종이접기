@@ -1,0 +1,13 @@
+def solution(n):
+    if n==1:
+        answer=[0]
+    elif n==2:
+        answer=[0,0,1]
+    elif n>2:
+        answer = [0,0,1]
+        for fold in range(2, n):
+            half=((2**fold)-2)//2
+            alpha=answer[:half]
+            beta=answer[half+1:]
+            answer=alpha+[0]+beta+[0]+alpha+[1]+beta
+    return answer
