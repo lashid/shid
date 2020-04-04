@@ -1,0 +1,37 @@
+def solution(n, results):
+    answer=0
+    win_to=[[] for repeat in range(n)] #1,2,3 ... n
+    lose_to=[[] for repeat in range(n)] #1,2,3 ... n
+    for match in results:
+        win_to[match[0]-1].append(match[1])
+        lose_to[match[1]-1].append(match[0])
+    num_win=[[] for repeat in range(n)]
+    num_lose=[[] for repeat in range(n)]
+    def search(current, player,results,num_list):
+        for result in results[current-1]:
+            if result not in num_list[player-1]:
+                candidates.append(result)
+                num_list[player-1].append(result)
+    for player in range(1,n+1):
+        candidates = []
+        candidates.append(player)
+        already=[]
+        while candidates:
+            current=candidates.pop(0)
+            search(current, player, win_to, num_win)
+            already.append(current)
+    for player in range(1, n + 1):
+        candidates = []
+        candidates.append(player)
+        already=[]
+        while candidates:
+            current = candidates.pop(0)
+            search(current, player, lose_to, num_lose)
+            already.append(current)
+    num_win=[len(num_win[index]) for index in range(n)]
+    num_lose=[len(num_lose[index]) for index in range(n)]
+    answer=[]
+    for index in range(n):
+        answer.append(num_win[index]+num_lose[index])
+    answer=answer.count(n-1)
+    return answer
