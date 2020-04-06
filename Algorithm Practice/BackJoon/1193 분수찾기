@@ -1,0 +1,18 @@
+target=int(input())
+
+n=1
+m=0
+check=0
+while True:
+    m+=n
+    if m>=target:
+        if check%2==1:
+            left=str(n-(m-target))
+            right=str(1+(m-target))
+        else:
+            left=str(1+(m-target))
+            right=str(n-(m-target))
+        break
+    n+=1
+    check+=1
+print(left+'/'+right)
