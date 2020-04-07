@@ -1,0 +1,30 @@
+n,m=map(int, input().split(' '))
+target_list=list(map(int, input().split(' ')))
+answer=0
+while target_list:
+    length=len(target_list)
+    target=target_list[0]
+    if n%2==0:
+        left=[target_list[i] for i in range(length) if target_list[i]<=(n/2)]
+        right=[target_list[i] for i in range(length) if target_list[i]>=((n/2)+1)]
+        if target in left:
+            answer+=(target-1)
+            n-=1
+            target_list=[target_list[i]-target if target_list[i]>=target else n-(target-target_list[i]-1) for i in range(len(target_list))]
+        else:
+            answer+=(n+1-target)
+            n-=1
+            target_list=[target_list[i]+(n+1-target) if target_list[i]<target else target_list[i]-target for i in range(len(target_list))]
+    else:
+        left=[target_list[i] for i in range(length) if target_list[i]<=(n/2)]+[(n//2)+1]
+        right=[target_list[i] for i in range(length) if target_list[i]>=((n/2)+1)]
+        if target in left:
+            answer+=(target-1)
+            n-=1
+            target_list=[target_list[i]-target if target_list[i]>=target else n-(target-target_list[i]-1) for i in range(len(target_list))]
+        else:
+            answer+=(n+1-target)
+            n-=1
+            target_list=[target_list[i]+(n+1-target) if target_list[i]<target else target_list[i]-target for i in range(len(target_list))]
+    target_list.pop(0)
+print(answer)
