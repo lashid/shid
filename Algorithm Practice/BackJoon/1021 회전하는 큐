@@ -1,30 +1,28 @@
 n,m=map(int, input().split(' '))
 target_list=list(map(int, input().split(' ')))
 answer=0
+data=[x for x in range(1,n+1)]
+
+def move_to_left():
+    global answer, data
+    answer+=1
+    data.append(data.pop(0))
+
+def move_to_right():
+    global answer, data
+    answer+=1
+    right_end=data.pop()
+    data=[right_end]+data
+
 while target_list:
-    length=len(target_list)
-    target=target_list[0]
-    if n%2==0:
-        left=[target_list[i] for i in range(length) if target_list[i]<=(n/2)]
-        right=[target_list[i] for i in range(length) if target_list[i]>=((n/2)+1)]
-        if target in left:
-            answer+=(target-1)
-            n-=1
-            target_list=[target_list[i]-target if target_list[i]>=target else n-(target-target_list[i]-1) for i in range(len(target_list))]
-        else:
-            answer+=(n+1-target)
-            n-=1
-            target_list=[target_list[i]+(n+1-target) if target_list[i]<target else target_list[i]-target for i in range(len(target_list))]
+    target=target_list.pop(0)
+    left_length=(len(data)+1)//2
+    if (data.index(target)+1)<=left_length:
+        while target!=data[0]:
+            move_to_left()
+        data.pop(0)
     else:
-        left=[target_list[i] for i in range(length) if target_list[i]<=(n/2)]+[(n//2)+1]
-        right=[target_list[i] for i in range(length) if target_list[i]>=((n/2)+1)]
-        if target in left:
-            answer+=(target-1)
-            n-=1
-            target_list=[target_list[i]-target if target_list[i]>=target else n-(target-target_list[i]-1) for i in range(len(target_list))]
-        else:
-            answer+=(n+1-target)
-            n-=1
-            target_list=[target_list[i]+(n+1-target) if target_list[i]<target else target_list[i]-target for i in range(len(target_list))]
-    target_list.pop(0)
+        while target!=data[0]:
+            move_to_right()
+        data.pop(0)
 print(answer)
