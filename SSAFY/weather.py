@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-url = "https://api.openweathermap.org/data/2.5/weather?q=Seoul&appid=" # 각자의 주소를 입력하는 
+url = "https://api.openweathermap.org/data/2.5/weather?q=Seoul&appid=" # 각자의 주소를 입력
 
 data = requests.get(url).json()
 
