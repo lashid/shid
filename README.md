@@ -3,7 +3,7 @@
 # 
 
 # ⊙ From Back-End ~ Data Analysis
-# ⊙ Mostly Python (Feat. SAS, SQL...)
+# ⊙ Python (Feat. SAS, SQL...)
 
 # ⊙ SSAFY 20.07.07~
 
