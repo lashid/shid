@@ -5,7 +5,7 @@
 # ⊙ From Back-End ~ Data Analysis
 # ⊙ Mostly Python (Feat. SAS, SQL...)
 
-# SSAFY 20.07.07~
+# ⊙ SSAFY 20.07.07~
 
 # 
 # "Portfolio" on my Github.
