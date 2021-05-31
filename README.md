@@ -9,4 +9,3 @@
 
 # 
 # "Portfolio" on my Github.
-# "Blog" https://blog.naver.com/gauss3th
