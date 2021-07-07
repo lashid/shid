@@ -1,6 +1,6 @@
 #
 # Oh Jinha
-# Developers who shuffle data and change lives
+# Developer who shuffle data and change lives
 # 
 
 # ⊙ From Back-End To Data Analysis
