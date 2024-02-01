@@ -3,8 +3,8 @@
 # Developer who shuffle data and change lives
 # 
 
-# ⊙ From Back-End To Data Analysis
-# ⊙ Python (Feat. pyspark, tensorflow ...)
+# ⊙ Data Scientist
+# ⊙ Python
 
-# ⊙ SSAFY 20.07. ~ 20.08.
-# ⊙ Hyundai Card Recommendation Engine Team 20.10. ~
+# ⊙ SSAFY (20.07. ~ 20.08.)
+# ⊙ Hyundai Card Recommendation Engine Team (20.10. ~)
