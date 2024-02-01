@@ -1,9 +1,9 @@
-#
-# Oh Jinha
-# Developer who shuffle data and change lives
+##
+## Oh Jinha
+## Developer who shuffle data and change lives
 
-## ⊙ Data Scientist
-## ⊙ Python
+### ⊙ Data Scientist
+### ⊙ Python
 
 ## *Career
 ### ⊙ SSAFY (20.07. ~ 20.08.)
