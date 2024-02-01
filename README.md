@@ -1,6 +1,6 @@
 ##
 ## Oh Jinha
-## Developer who shuffle data and change lives
+### Developer who shuffle data and change lives
 
 ### ⊙ Data Scientist
 ### ⊙ Python
